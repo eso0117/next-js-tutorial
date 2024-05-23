@@ -213,7 +213,7 @@ export default function NavLinks() {
 </div>
 
 ## Ref
-- [https://nextjs.org/learn/dashboard-app/navigating-between-pages]
+- [https://nextjs.org/learn/dashboard-app/navigating-between-pages](https://nextjs.org/learn/dashboard-app/navigating-between-pages)
 
 
 <link rel="stylesheet" href="https://eso0117.github.io/web-practice/public/next-js-tutorial/css.css">
