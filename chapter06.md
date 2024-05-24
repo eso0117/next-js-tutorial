@@ -215,7 +215,7 @@ WHERE invoices.amount = 666;
     <p class="next">다음</p>    
     <p class="next__title">7: 데이터 가져오기</p>
     <p>API, SQL, 그리고 다른 방법 등 데이터베이스로부터 데이터를 가져올 수 있는 방법에 대해 이야기해봅시다.</p>
-    <a id="next__btn" href="https://nextjs.org/learn/dashboard-app/fetching-data">챕터 7 시작하기
+    <a id="next__btn" href="https://thewys.tistory.com/entry/NextJS-튜토리얼-챕터-7-데이터-가져오기">챕터 7 시작하기
     <svg data-testid="geist-icon" height="16" stroke-linejoin="round" viewBox="0 0 16 16" width="16" style="color: currentcolor;"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.53033 2.21968L9 1.68935L7.93934 2.75001L8.46967 3.28034L12.4393 7.25001H1.75H1V8.75001H1.75H12.4393L8.46967 12.7197L7.93934 13.25L9 14.3107L9.53033 13.7803L14.6036 8.70711C14.9941 8.31659 14.9941 7.68342 14.6036 7.2929L9.53033 2.21968Z" fill="currentColor"></path></svg>
     </a>
   </div>
