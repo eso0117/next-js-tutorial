@@ -10,13 +10,13 @@
 
 여기 우리가 다룰 주제들이 있습니다.
 - 깃허브에 프로젝트 올리기
-- 즉시 미리보기와 배포를 위한 Vercel 계정을 생성과 깃허브 연동하기
-- 프로젝트와 Postgres 데이터베이싀 연동하기
+- 미리보기와 배포를 할 수 있는 Vercel 계정을 생성하고 깃허브 연동하기
+- 프로젝트와 Postgres 데이터베이스 연동하기
 - 초기값으로 데이터베이스에 데이터 넣기
 
 ## 깃허브 저장소 생성하기
 
-만약 아직 깃허브에 푸시를 안 했다면 푸시를 해봅시다. 그러면 데이터베이스 셋업과 배포를 더 쉽게 만들어 줄 겁니다.
+만약 아직 깃허브에 푸시를 안 했다면 푸시를 해봅시다. 그러면 데이터베이스 셋업과 배포를 더 쉽게 할 수 있습니다.
 만약 저장소 세팅하는데 도움이 필요하다면, [이 깃허브 가이드](https://help.github.com/en/github/getting-started-with-github/create-a-repo)를 보세요.
 
 <div class="hint">
@@ -42,7 +42,7 @@
 축하합니다! 🎉 이제 프로젝트가 배포되었습니다.
 <img src="https://nextjs.org/_next/image?url=%2Flearn%2Flight%2Fdeployed-project.png&w=1920&q=75" alt="Nextjs 튜토리얼 vercel 배포 후 화면">
 
-깃허브 저장소와 연결함으로서, **메인** 브랜치에 푸시를 할 때마다, Vercel에서 어떠한 설정 없이도 자동적으로 배포를 할겁니다. 풀리퀘스트가 생성되면, 배포 에러를 초기에 찾을 수 있게 해주고 프로젝트 미리보기를 팀원들과 공유할 수 있는 [즉시 미리보기](https://vercel.com/docs/deployments/preview-deployments#preview-urls) 기능도 있습니다.
+깃허브 저장소와 연결함으로서, **메인** 브랜치에 푸시를 할 때마다, Vercel에서 어떠한 설정 없이도 자동적으로 배포를 할겁니다. 풀리퀘스트가 생성되면, 배포 에러를 초기에 찾을 수 있게 해주고 프로젝트 미리보기를 통해 팀원들과 공유할 수 있는 [즉시 미리보기](https://vercel.com/docs/deployments/preview-deployments#preview-urls) 기능도 있습니다.
 
 ## Postgres database 생성하기
 
@@ -51,7 +51,7 @@
 
 (** 여기서 실제로 나는 Storage tab에서 바로 **Postgres create -> Accept** 버튼이 있어 누를 수 있었다. 해당 튜토리얼때랑 지금이랑 좀 UI가 다른듯.)
 
-약관에 동의하고, 데이터베이스의 이름을 설정하고, 데이터베이스의 지역이 **Washington D.C (iad1)** 로 되어있는지 확인합시다. - 이것은 모든 새로운 Vercel 프로젝트를 위한 [기본설정 지역](https://vercel.com/docs/functions/serverless-functions/regions#select-a-default-serverless-region)입니다. 데이터베이스를 어플리케이션 코드와 같거나 가까운 지역으로 설정함으로서, 데이터 요청의 [지연](https://developer.mozilla.org/en-US/docs/Web/Performance/Understanding_latency)을 줄일 수 있습니다.
+약관에 동의하고, 데이터베이스의 이름을 설정하고, 데이터베이스의 지역이 **Washington D.C (iad1)** 로 되어있는지 확인합시다. - 이것은 모든 새로운 Vercel 프로젝트를 위한 [기본설정 지역](https://vercel.com/docs/functions/serverless-functions/regions#select-a-default-serverless-region)입니다. 데이터베이스 위치를 어플리케이션 코드와 같거나 가까운 지역으로 설정함으로서, 데이터 요청의 [지연](https://developer.mozilla.org/en-US/docs/Web/Performance/Understanding_latency)을 줄일 수 있습니다.
 
 <img src="https://nextjs.org/_next/image?url=%2Flearn%2Flight%2Fdatabase-region.png&w=1920&q=75" alt="Postgres Database 생성하기">
 
@@ -79,7 +79,7 @@
 프로젝트의 `/scripts` 폴더 안에 `seed.js` 라는 파일이 있습니다.
 이 스크립트로 `invoices`, `customers`, `user`, `revenue` 테이블을 생성하고 데이터를 넣을(seed) 수 있습니다.
 
-코드가 하고 있는것을 전부 이해하지 못하더라도 걱정하지마세요, 그러나 전체적인 맥락으로서, 이 스크립트는 테이블 생성을 위해 SQL을 사용합니다. 그리고 `placeholder-data.js` 파일에 있는 데이터들이 테이블 생성 후에 초기 데이터로서 입력될겁니다.
+코드가 하고 있는것을 전부 이해하지 못하더라도 걱정하지마세요, 그러나 전체적인 맥락으로서, 이 스크립트는 테이블 생성을 위해 SQL을 사용합니다. 그리고 `placeholder-data.js` 파일에 있는 데이터들이 테이블 생성 후에 초기 데이터로 입력될겁니다.
 
 <div class="code-with-file">
 /package.json
@@ -114,7 +114,7 @@
       </div>
       <div class="option" data-question-number="01">
         <span class="option__number">B</span>
-        <span class="option__desc">데이터베이스의 스키마 블러오기</span>
+        <span class="option__desc">데이터베이스의 스키마 불러오기</span>
       </div>
       <div class="option" data-question-number="01" data-answer="true">
         <span class="option__number">C</span>
@@ -142,8 +142,8 @@
 **문제해결**
 - `.env`파일에 데이터를 복사하기 전, 데이터베이스 비밀값들을 드러내게 하는걸 잊지마세요.
 - 이 스크립트는 유저의 비밀번호를 해시하기 위해 `bcrypt`를 사용합니다. 만약 `bycrypt`가 환경에 맞지 않는다면, [`bcryptjs`](https://www.npmjs.com/package/bcryptjs)를 대신 사용하도록 업데이트 할 수 있습니다.
-- 만약 데이터베이스에 초기데이터를 넣는동안 이슈가 있어서 다시 스크립트를 돌리는 경우, 현재 테이블을 데이터베이스 쿼리 인터페이스에서 `DROP TABLE tablename`이란 명령어를 통해 드랍할 수 있습니다. 아래 [쿼리 실행하기](https://nextjs.org/learn/dashboard-app/setting-up-your-database#executing-queries)에서 더 세부사항을 확인하세요. 하지만 조심하세요. 이 명령어는 테이블과 그 모든 데이터를 지웁니다.
-우리는 지금 플레이스홀더 데이터로 작업을 하므로 예제 앱에서 하는것은 괜찮습니다. 그러나 이 명령어는 실제 운영하고 있는 프로덕션앱에서 하면 안됩니다.
+- 만약 데이터베이스에 초기데이터를 넣는 동안 이슈가 있어서 다시 스크립트를 돌리는 경우, 현재 테이블을 데이터베이스 쿼리 인터페이스에서 `DROP TABLE tablename`이란 명령어를 통해 드랍할 수 있습니다. 아래 [쿼리 실행하기](https://nextjs.org/learn/dashboard-app/setting-up-your-database#executing-queries)에서 더 세부사항을 확인하세요. 하지만 주의하세요. 이 명령어는 테이블과 그 모든 데이터를 지웁니다.
+우리는 지금 플레이스홀더 데이터로 작업을 하므로 예제 앱에서 하는것은 괜찮습니다. 그러나 이 명령어는 실제 운영하고 있는 프로덕션 어플리케이션에서 하면 안됩니다.
 - 만약 Vercel Postgres 데이터베이스에 데이터를 넣는데 어려움이 있다면, [깃허브](https://github.com/vercel/next-learn/issues)에 이슈를 올려주세요.
 
 </div>
@@ -162,7 +162,7 @@
 
 쿼리탭으로 바꿔서 데이터베이스에게 질의할 수 있습니다. 이곳에서는 표준 SQL커맨드를 지원합니다. 예를들어, `DROP TABLE customers`을 입력하면 "customers" 테이블과 그 안에 모든 데이터를 지울 수 있습니다. - ***그러니 조심하세요!***
 
-첫번쨰 데이터베이스 질의를 실행해봅시다. 다음의 SQL코드를 복사하고 Vercel 인터페이스에 붙여넣으세요
+첫번째 데이터베이스 질의를 실행해봅시다. 다음의 SQL코드를 복사하고 Vercel 인터페이스에 붙여넣으세요
 
 ```
 SELECT invoices.amount, customers.name
@@ -210,7 +210,7 @@ WHERE invoices.amount = 666;
 
 <div class="finish">
   <p class="finish__title">챕터 6을 완료했습니다.</p>
-  <p>이제 데이터베이스가 셋팅되었습니다, 우리 어플리케이션에서 다시 작업해봅시다.</p>
+  <p>이제 데이터베이스가 세팅되었습니다, 우리 어플리케이션에서 다시 작업해봅시다.</p>
   <div class="next-box">
     <p class="next">다음</p>    
     <p class="next__title">7: 데이터 가져오기</p>
