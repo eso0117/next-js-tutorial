@@ -500,7 +500,7 @@ export async function fetchCardData() {
     <p class="next">다음</p>    
     <p class="next__title">8: 정적 그리고 동적 렌더링</p>
     <p>PPR과 Streaming으로 데이터 가져오기를 더 최적화 하는 방법을 배웁니다.</p>
-    <a id="next__btn" href="https://nextjs.org/learn/dashboard-app/static-and-dynamic-rendering">챕터 8 시작하기
+    <a id="next__btn" href="https://thewys.tistory.com/entry/NextJS-튜토리얼-챕터-8-정적-그리고-동적-렌더링">챕터 8 시작하기
     <svg data-testid="geist-icon" height="16" stroke-linejoin="round" viewBox="0 0 16 16" width="16" style="color: currentcolor;"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.53033 2.21968L9 1.68935L7.93934 2.75001L8.46967 3.28034L12.4393 7.25001H1.75H1V8.75001H1.75H12.4393L8.46967 12.7197L7.93934 13.25L9 14.3107L9.53033 13.7803L14.6036 8.70711C14.9941 8.31659 14.9941 7.68342 14.6036 7.2929L9.53033 2.21968Z" fill="currentColor"></path></svg>
     </a>
   </div>
