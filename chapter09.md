@@ -501,7 +501,7 @@ Suspense와 무엇이 잘 맞을지 실험해보는걸 두려워 마세요. 이�
     <p class="next">다음</p>    
     <p class="next__title">10: 부분 미리 렌더링(Optional)</p>
     <p>부분 미리 렌더링을 미리 한번 들여다 봅시다 - 스트리밍을 사용하도록 만들어진 실험적인 렌더링 모델입니다.</p>
-    <a id="next__btn" href="https://nextjs.org/learn/dashboard-app/partial-prerendering">챕터 10 시작하기
+    <a id="next__btn" href="https://thewys.tistory.com/entry/NextJS-튜토리얼-챕터-10-부분-미리-렌더링Optional">챕터 10 시작하기
     <svg data-testid="geist-icon" height="16" stroke-linejoin="round" viewBox="0 0 16 16" width="16" style="color: currentcolor;"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.53033 2.21968L9 1.68935L7.93934 2.75001L8.46967 3.28034L12.4393 7.25001H1.75H1V8.75001H1.75H12.4393L8.46967 12.7197L7.93934 13.25L9 14.3107L9.53033 13.7803L14.6036 8.70711C14.9941 8.31659 14.9941 7.68342 14.6036 7.2929L9.53033 2.21968Z" fill="currentColor"></path></svg>
     </a>
   </div>
