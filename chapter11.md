@@ -126,7 +126,7 @@ export default function Search({ placeholder }: { placeholder: string }) {
 
 훌륭합니다! 유저의 입력을 받았어요. 이제 검색어로 URL을 업데이트 합시다.
 
-## 검색 파라미터로 URL 업데이트 하기
+### 2. 검색 파라미터로 URL 업데이트 하기
 
 `useSearchParams`를 `'next/navigation'`에서 불러(import)오세요. 그리고 변수에 할당합니다.
 
@@ -172,9 +172,103 @@ export default function Search() {
 ```
 </div>
 
+`URLSearchParam`은 URL 쿼리 파라미터 관련해서 여러 유틸리티 메소드들을 제공하는 웹 API입니다. 복잡한 문자열 리터럴을 사용하는 것 대신, 이것을 사용해서 `?page=1&query=a`같은 문자열 파라미터를 얻을 수 있습니다.
+
+다음으로, 유저 입력에 따라 파라미터 값을 `set` 하세요. 만약 유저 입력이 없다면, 파라미터를 지웁니다.
+
+<div class="code-with-file">
+/app/ui/search.tsx
+
+```
+'use client';
+ 
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { useSearchParams } from 'next/navigation';
+ 
+export default function Search() {
+  const searchParams = useSearchParams();
+ 
+  function handleSearch(term: string) {
+    const params = new URLSearchParams(searchParams);
+    if (term) {
+      params.set('query', term);
+    } else {
+      params.delete('query');
+    }
+  }
+  // ...
+}
+```
+</div>
+
+이제 우리는 쿼리 스트링을 갖게 되었으니, Next.js의 `useRouter`과 `usePathname` 훅을 써서 URL을 업데이트 할 수 있습니다.
+
+`next/navigation`에서 `useRouter`과 `usePathname`을 불러(import)오세요. 그리고 `handleSearch`내에 `useRouter()`에서 `replace` 메소드를 사용합니다.
+
+<div class="/app/ui/search.tsx">
+/app/ui/search.tsx
+
+```
+'use client';
+ 
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+ 
+export default function Search() {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { replace } = useRouter();
+ 
+  function handleSearch(term: string) {
+    const params = new URLSearchParams(searchParams);
+    if (term) {
+      params.set('query', term);
+    } else {
+      params.delete('query');
+    }
+    replace(`${pathname}?${params.toString()}`);
+  }
+}
+```
+</div>
+
+무엇이 일어나고 있는지 설명을 하자면,
+-  `${pathname}` 은 현재 경로입니다, 지금의 경우에는 `"/dashboard/invoices"` 입니다.
+-  유저가 검색창에 입력을 할때, `params.toString()`은 유저의 입력을 URL에 적합한 형식으로 바꿔줍니다.
+-  `replace(${pathname}?${params.toString()})`은 유저의 입력 데이터로 URL을 업데이트 해줍니다. 예를들어, 만약 유저가 `"Lee"`를 검색 했다면 `/dashboard/invoices?query=lee`가 됩니다.
+- Next.js의 클라이언트 사이드 페이지 이동(우리가 챕터 5 - [페이지간 이동](https://thewys.tistory.com/entry/NextJS-튜토리얼-챕터-5-페이지간-이동)에서 배운겁니다.) 덕분에 URL은 페이지 리로딩되는 것 없이 업데이트 됩니다.
+
+### 3. URL과 입력 동기화하기
+
+입력필드가 URL과 동기화되고 공유할때 채워지도록 하기 위해 `searchParams`에서 `defaultValue`를 가져와 input에 전달할 수 있습니다.
+
+<div class="code-with-file">
+/app/ui/search.tsx
 
 
+```
+<input
+  className="peer block w-full rounded-md border border-gray-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500"
+  placeholder={placeholder}
+  onChange={(e) => {
+    handleSearch(e.target.value);
+  }}
+  defaultValue={searchParams.get('query')?.toString()}
+/>
+```
+</div>
 
+<div class="hint">
+
+**`defaultValue` vs `value` / Controlled vs Uncontrolled**
+
+state를 사용하여 입력값을 관리하면, `value` 속성을 사용해 controlled compononent를 만들 것이고, 이는 리액트가 입력 상태를 관리한다는 의미입니다.
+
+그러나 state를 사용하고 있지 않기 때문에, `defaultValue`를 사용할 수 있습니다. 이것은 input이 그 자신의 state를 관리할거란 의미이고, 우리가 state대신 URL에 검색 쿼리를 저장하고 있기 때문에 괜찮습니다.
+
+</div>
+
+### 테이블 업데이트 하기
 
 
 
