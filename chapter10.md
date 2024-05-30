@@ -122,7 +122,7 @@ Next.js 14는 부분 미리 렌더링이 미리보기가 있습니다 -- 동적�
     <p class="next">다음</p>    
     <p class="next__title">11: 검색과 페이지네이션 추가하기</p>
     <p>Next.js API로 검색과 페이지네이션을 어떻게 하는지 배웁니다.</p>
-    <a id="next__btn" href="https://nextjs.org/learn/dashboard-app/adding-search-and-pagination">챕터 11 시작하기
+    <a id="next__btn" href="https://thewys.tistory.com/entry/NextJS-%ED%8A%9C%ED%86%A0%EB%A6%AC%EC%96%BC-%EC%B1%95%ED%84%B0-11-%EA%B2%80%EC%83%89%EA%B3%BC-%ED%8E%98%EC%9D%B4%EC%A7%80%EB%84%A4%EC%9D%B4%EC%85%98-%EC%B6%94%EA%B0%80%ED%95%98%EA%B8%B0">챕터 11 시작하기
     <svg data-testid="geist-icon" height="16" stroke-linejoin="round" viewBox="0 0 16 16" width="16" style="color: currentcolor;"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.53033 2.21968L9 1.68935L7.93934 2.75001L8.46967 3.28034L12.4393 7.25001H1.75H1V8.75001H1.75H12.4393L8.46967 12.7197L7.93934 13.25L9 14.3107L9.53033 13.7803L14.6036 8.70711C14.9941 8.31659 14.9941 7.68342 14.6036 7.2929L9.53033 2.21968Z" fill="currentColor"></path></svg>
     </a>
   </div>
