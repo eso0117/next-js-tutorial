@@ -268,41 +268,188 @@ state를 사용하여 입력값을 관리하면, `value` 속성을 사용해 con
 
 </div>
 
-### 테이블 업데이트 하기
+### 4. 테이블 업데이트 하기
 
+이제 검색 쿼리를 반영해서 테이블 컴퍼넌트를 업데이트 해야합니다.
 
+invoices 페이지로 돌아갑시다.
 
+Page 컴퍼넌트는  [`searchParams`이라는 prop을 받습니다.](https://nextjs.org/docs/app/api-reference/file-conventions/page), 그래서 현재 URL 파라미터를 `<Table>` 컴퍼넌트로 보낼 수 있습니다.
 
+<div class="code-with-file">
+/app/dashboard/invoices/page.tsx
 
+```
+import Pagination from '@/app/ui/invoices/pagination';
+import Search from '@/app/ui/search';
+import Table from '@/app/ui/invoices/table';
+import { CreateInvoice } from '@/app/ui/invoices/buttons';
+import { lusitana } from '@/app/ui/fonts';
+import { Suspense } from 'react';
+import { InvoicesTableSkeleton } from '@/app/ui/skeletons';
+ 
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?: {
+    query?: string;
+    page?: string;
+  };
+}) {
+  const query = searchParams?.query || '';
+  const currentPage = Number(searchParams?.page) || 1;
+ 
+  return (
+    <div className="w-full">
+      <div className="flex w-full items-center justify-between">
+        <h1 className={`${lusitana.className} text-2xl`}>Invoices</h1>
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
+        <Search placeholder="Search invoices..." />
+        <CreateInvoice />
+      </div>
+      <Suspense key={query + currentPage} fallback={<InvoicesTableSkeleton />}>
+        <Table query={query} currentPage={currentPage} />
+      </Suspense>
+      <div className="mt-5 flex w-full justify-center">
+        {/* <Pagination totalPages={totalPages} /> */}
+      </div>
+    </div>
+  );
+}
+```
+</div>
 
+`<Table>` 컴퍼넌트를 보면, `query`, `currentPage` 2개의 prop이 해당 쿼리랑 일치하는 송장을 리턴하는 `fetchFilteredInvoices()`의 함수 인자로 들어가는걸 볼겁니다.
 
-<button class="show-and-hide-btn--hidden show-and-hide-btn btn" data-target="practice-01">
-  <span data-btn-content>정답 보이기</span>
-</button>
+<div class="code-with-file">
+/app/ui/invoices/table.tsx
 
-<div class="is-inactive" data-hide-target="practice-01">
-<img src="https://nextjs.org/_next/image?url=%2Flearn%2Flight%2Fdashboard-static-dynamic-components.png&w=3840&q=75" alt="대시보드의 동적, 정적 컨텐츠 구분">
+```
+// ...
+export default async function InvoicesTable({
+  query,
+  currentPage,
+}: {
+  query: string;
+  currentPage: number;
+}) {
+  const invoices = await fetchFilteredInvoices(query, currentPage);
+  // ...
+}
+```
+</div>
 
-- `<SideNav>` 컴퍼넌트는 데이터나 유저 개인화에 따라 달라지지 않습니다. 따라서 정적이어야 합니다.
-- `<Page>` 내에 컴퍼넌트는 데이터나 유저에 맞춰 정보가 바뀝니다. 따라서 동적이어야 합니다.
+이 변경사항이 적용되면 테스트를 시작해봅시다. 검색어를 입력하면, URL이 업데이트 될 것이고, 서버로부터 데이터를 가져오라는 명령을 보냅니다. 그리고 쿼리랑 매치되는 송장들만 리턴될 겁니다.
+
+<div class="hint">
+
+**언제 `useSearchParams()` 훅을쓰고, 언제 `searchParams` prop을 쓰나요?**
+
+이 강의를 진행하면서, 검색 파라미터를 가져오는 두가지 방법이 있는걸 알았을 겁니다. 각각을 쓰는 것은 현재 client에서 작업하는지 server에서 작업하는지에 달려있습니다.
+
+- `<Search>`는 클라이언트 컴퍼넌트입니다. 클라이언트에서 파라미터에 접근하려면 `useSearchParams()` 훅을 써야합니다.
+- `<Table>`은 서버 컴퍼넌트입니다. 페이지로부터 `searchParams` prop을 사용해 해당 컴퍼넌트에 전달할 수 있습니다.
 
 </div>
 
-## 부분 미리 렌더링이란?
+### 좋은 방법: 디바운싱(Debouncing)
+축하합니다! Next.js로 검색을 구현했습니다! 그런데 이것을 최적화 할 방법이 더 있습니다.
 
-Next.js 14는 부분 미리 렌더링이 미리보기가 있습니다 -- 동적인 부분은 유지하면서 정적인 로딩 쉘로 렌더링 해주는 실험적인 기능입니다. 다시 말해서, 동적인 부분을 분리할 수 있습니다. 
-예를 들어
-<img src="https://nextjs.org/_next/image?url=%2Flearn%2Flight%2Fthinking-in-ppr.png&w=3840&q=75" alt="Nextjs 14 부분 미리 렌더링 예시">
+`handleSearch` 함수 내에, `console.log`를 추가해 봅시다.
 
-유저가 해당 라우트를 방문할때
+<div class="code-with-file">
+/app/ui/search.tsx
 
-- 정적 라우트 쉘로 빠른 초기 로드를 유지합니다
-- 쉘은 동적 컨텐츠를 비어놓고, 비동기적으로 컨텐츠를 불러옵니다
-- 비동기 빈 컨텐츠는 전체적인 페이지 로드 타임을 줄이며 병렬로 스트림됩니다.
+```
+function handleSearch(term: string) {
+  console.log(`Searching... ${term}`);
+ 
+  const params = new URLSearchParams(searchParams);
+  if (term) {
+    params.set('query', term);
+  } else {
+    params.delete('query');
+  }
+  replace(`${pathname}?${params.toString()}`);
+}
+```
+</div>
 
-이것은 전체 라우트가 완전히 정적이거나 동적인 오늘날 어플리케이션이 동작하는 방식과 다릅니다.
+그리고 검색바에 "Emil" 을 입력하고, 개발툴 콘솔을 확인해봅시다. 어떤가요?
 
-부분 미리 렌더링은 굉장히 빠른 정적 컨텐츠의 표시와 동적 컨텐츠 제공 능력의 결합이고, 우리는 이것이 잠재적으로 [웹 어플리케이션에서 기본적인 렌더링 모델](https://vercel.com/blog/partial-prerendering-with-next-js-creating-a-new-default-rendering-model)이 될거라고 생각합니다.
+<div class=code-with-file>
+Dev Tools Console
+
+```
+Searching... E
+Searching... Em
+Searching... Emi
+Searching... Emil
+```
+</div>
+
+모든 키 입력에 따라 URL을 업데이트 하고 있습니다. 즉 매번 키 입력마다 데이터베이스에 질의가 되고 있는거죠! 이것은 우리의 어플리케이션이 작을때는 문제가 아니겠지만, 어플리케이션이 수천명의 유저를 가지고 있고, 각각의 유저가 모든 키 입력마다 데이터베이스에 질의를 요청한다 생각해보세요.
+
+**디바운싱(Debouncing)** 은 특정 함수가 실행되는 것에 제한을 두는 프로그래밍 방법입니다. 우리의 경우에는 유저가 입력을 멈췄을 때에만 질의를 해야 합니다.
+
+<div class="hint">
+
+**디바운스가 동작하는 방법**
+
+1. **이벤트 발생**: 디바운스가 되어야할 이벤트(검색박스에 입력 같은)가 발생될때, 타이머가 시작됩니다.
+2. **Wait**: 새로운 이벤트가 발생되면, 타이머는 리셋됩니다.
+3. **실행**: 타이머가 시간이 되면, 디바운스된 함수가 실행됩니다. 
+
+</div>
+
+디바운싱(Debouncing)을 구현 하는데는, 스스로 그 함수를 구현하는걸 포함해서 몇가지 방법이 있습니다. 우리는 간단히 하기 위해서, [`use-debounce`](https://www.npmjs.com/package/use-debounce)라는 라이브러리를 사용하겠습니다.
+
+<div class="code-with-file">
+Terminal
+
+```
+npm i use-debounce
+```
+</div>
+
+이제 `<Search>` 컴퍼넌트에서, `useDebouncedCallback` 함수를 불러(import)오세요.
+
+<div class="code-with-file">
+/app/ui/search.tsx
+
+```
+// ...
+import { useDebouncedCallback } from 'use-debounce';
+ 
+// Inside the Search Component...
+const handleSearch = useDebouncedCallback((term) => {
+  console.log(`Searching... ${term}`);
+ 
+  const params = new URLSearchParams(searchParams);
+  if (term) {
+    params.set('query', term);
+  } else {
+    params.delete('query');
+  }
+  replace(`${pathname}?${params.toString()}`);
+}, 300);
+```
+</div>
+
+이 함수는 handleSearch의 컨텐츠를 감쌉니다. 그리고 유저가 입력을 끝내면(300ms) 해당 코드를 동작시킵니다.
+
+이제 검색바에 입력을 해보세요, 그리고 개발툴의 콘솔을 열어보세요. 다음과 같이 잘 작동하는걸 확인할 수 있습니다.
+
+<div class="code-with-file">
+Dev Tools Console
+
+```
+Searching... Emil
+```
+</div>
+
+디바운싱(Debouncing)으로, 데이터베이스에 보내는 요청을 줄일 수 있고, 결국 리소스를 아낄 수 있습니다.
 
 <div class="quiz">
   <div class="quiz__icon">
@@ -311,19 +458,24 @@ Next.js 14는 부분 미리 렌더링이 미리보기가 있습니다 -- 동적�
   <p class="quiz__title">퀴즈할 시간입니다!</p>
   <p class="quiz__desc">익힌걸 테스트해보고 무엇을 배웠는지 봅시다.</p>
   <div class="quiz__box">
-    <p class="quiz__question">부분 미리 렌더링 내에 구멍은 무엇인가요?</p>
+    <p class="quiz__question">디바운싱이 검색기능에 있어서 해결해준건 무엇인가요?</p>
     <div class="option-list">
       <div class="option" data-question-number="01">
         <span class="option__number">A</span>
-        <span class="option__desc">자바스크립트가 불가능한 부분</span>
-      </div>
-      <div class="option" data-question-number="01" data-answer="true">
-        <span class="option__number">B</span>
-        <span class="option__desc">동적 컨텐츠가 비동기적으로 불러와질 부분</span>
+        <span class="option__desc">데이터베이스 질의 속도 향상</span>
       </div>
       <div class="option" data-question-number="01">
+        <span class="option__number">B</span>
+        <span class="option__desc">URL을 북마크 할 수 있도록 해줌</span>
+      </div>
+      <div class="option" data-question-number="01"
+      data-answer="true">
         <span class="option__number">C</span>
-        <span class="option__desc">서드 파티 스크립트가 불러와질 부분.</span>
+        <span class="option__desc">모든 키 입력마다 데이터베이스 요청을 막아줌</span>
+      </div>
+      <div class="option" data-question-number="01">
+        <span class="option__number">D</span>
+        <span class="option__desc">SEO최적화를 도와줌</span>
       </div>
     </div>
     <div class="quiz__btn-container">
@@ -335,50 +487,210 @@ Next.js 14는 부분 미리 렌더링이 미리보기가 있습니다 -- 동적�
   </div>  
 </div>
 
-## 부분 미리 렌더링은 어떻게 동적하나요?
+## 페이지네이션(Pagination) 추가
 
-부분 미리 렌더링은 리액트의 [Concurrent APIs](https://react.dev/blog/2021/12/17/react-conf-2021-recap#react-18-and-concurrent-features)와 [Suspense](https://react.dev/reference/react/Suspense)를 사용해서 특정 조건이 충족 될때까지(예를 들어 데이터 가져오기) 우리 어플리케이션의 일부 렌더링을 미룹니다.
+검색기능을 추가한 후, 테이블에 한번에 6개까지만 보이는걸 알았나요? `data.ts`에 있는 `fetchFilteredInvoices()` 함수가 페이지당 최대 6개까지만 리턴하기 때문입니다.
 
-초기에 정적 컨텐츠로 이루어진 정적 파일이 대체화면으로 내제됩니다. 빌드 시간(혹은 revalidation) 동안, 라우트의 정적 부분들은 *미리 렌더링 됩니다*. 그리고 나머지 부분은 라우트에 유저가 요청할때까지 *미뤄집니다*.
+페이지네이션을 추가해서 유저들이 다른 페이지를 이동해 모든 송장들을 보는것이 가능해집니다. URL 파라미터를 통해서 어떻게 페이지네이션을 구현하는지 알아봅시다.
 
-컴퍼넌트를 Suspense 안으로 래핑하는것은 그 자체로는 컴퍼넌트를 동적으로 만드는게 아닙니다.(우리가 동적으로 만들기 위해 `unstable_noStore`를 썼던것을 기억하세요) 그보다는 Suspense는 라우트의 정적과 동적 부분 사이의 경계로서 쓰여졌습니다.
+`<Pagination/>` 컴퍼넌트로 이동하면 이것은 클라이언트 컴퍼넌트라는 걸 알 수 있습니다. 데이터 베이스의 비밀 값들을 노출 시킬 수 있는 데이터 가져오기를 클라이언트에서 하고 싶지 않을겁니다.(우리는 API 계층을 안 쓰고 있다는걸 기억하세요.)
+대신, 서버에서 데이터를 가져와 prop으로 컴퍼넌트에 전달할 수 있습니다.
 
-부분 미리 렌더링에서 가장 훌륭한 점은 이것을 쓰기 위해 코드를 바꿀 필요가 없다는 겁니다. 우리 라우트의 동적인 부분을 Suspense를 사용해 감싸는걸로, Next.js는 어떤 부분이 동적이고 어떤 부분이 정적인지 알게됩니다.
+`/dashboard/invoices/page.tsx`에서, `fetchInvoicesPages`라는 새로운 함수를 불러(import)오세요. `searchParams`로부터 `query`를 함수 인자로 전달합니다.
 
-<div class="hint">
+<div class="code-with-file">
+/app/dashboard/invoices/page.tsx
 
-**노트**: 부분 미리 렌더링이 어떻게 설정되는지 알고 싶다면, [부분 미리 렌더링(실험적)](https://nextjs.org/docs/app/api-reference/next-config-js/partial-prerendering) 또는 [부분 미리 렌더링 템플릿과 데모](https://vercel.com/templates/next.js/partial-prerendering-nextjs)를 시작해보세요. 이것은 아직 **실험적**이고 **아직 실제 프로덕션에 배포하기엔 준비가 안 되었다**걸 명심하세요.
+```
+// ...
+import { fetchInvoicesPages } from '@/app/lib/data';
+ 
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?: {
+    query?: string,
+    page?: string,
+  },
+}) {
+  const query = searchParams?.query || '';
+  const currentPage = Number(searchParams?.page) || 1;
+ 
+  const totalPages = await fetchInvoicesPages(query);
+ 
+  return (
+    // ...
+  );
+}
+```
 </div>
 
-### 요약
+`fetchInvoicesPages`는 검색 쿼리에 따라 총 페이지의 갯수를 반홥합니다. 예를들어 12개의 송장이 검색결과로 매칭된다면, 각 페이지는 6개의 송장씩 총 페이지는 2 페이지가 됩니다.
 
-오약하면, 우리는 어플리케이션에서 데이터 가져오는데 최적화를 하기 위해 몇가지 것들을 해왔습니다.
+다음으로, `totalPages` prop을 `<Pagination />` 컴퍼넌트에 전달하세요.
 
-1. 서버와 데이터베이스간 지연을 줄이기 위해 데이터베이스를 어플리케이션 코드와 같은 지역에 생성했습니다.
-2. 리액트 서버 컴퍼넌트로 서버에서 데이터를 가져왔습니다. 이것은 비용이 드는 데이터 연산이나 가져오는 부분을 서버에서 처리하면서, 클라이언트 사이드의 자바스크립트의 일을 줄이고 클라이언트에 데이터베이스 비밀값들이 노출되는걸 막습니다.
-3. 오직 필요한 데이터를 가져오기 위해 SQL을 사용했습니다. 이것은 각각의 요청에 전달되는 데이터의 양과 메모리 영역에 전환이 필요한 데이터의 양을 줄입니다.
-4. 필요하다고 판단되는 부분에 자바스크립트로 데이터를 병렬로 가져왔습니다.
-5. 느린 요청이 페이지 전체를 블럭하는것을 막기 위해 스트리밍을 사용해서 유저가 모든것이 불러와지기 전에 UI와 상호작용 할 수 있도록 했습니다.
-6. 데이터를 가져오는 부분을 그것이 필요한 컴퍼넌트로 옮겨서 부분 미리 렌더링을 준비할때, 동적으로 되어야할 부분들이 분리되었습니다.
+<div class="code-with-file">
+/app/dashboard/invoices/page.tsx
 
-다음 챕터에서, 데이터를 가져올때 쓰는 검색과 페이지네이션, 두가지 흔한 패턴을 볼겁니다.
+```
+// ...
+ 
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?: {
+    query?: string;
+    page?: string;
+  };
+}) {
+  const query = searchParams?.query || '';
+  const currentPage = Number(searchParams?.page) || 1;
+ 
+  const totalPages = await fetchInvoicesPages(query);
+ 
+  return (
+    <div className="w-full">
+      <div className="flex w-full items-center justify-between">
+        <h1 className={`${lusitana.className} text-2xl`}>Invoices</h1>
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
+        <Search placeholder="Search invoices..." />
+        <CreateInvoice />
+      </div>
+      <Suspense key={query + currentPage} fallback={<InvoicesTableSkeleton />}>
+        <Table query={query} currentPage={currentPage} />
+      </Suspense>
+      <div className="mt-5 flex w-full justify-center">
+        <Pagination totalPages={totalPages} />
+      </div>
+    </div>
+  );
+}
+```
+</div>
+
+`<Pagination />` 컴퍼넌트로 이동해 `usePathname`과 `useSearchParams` 훅을 불러(import)오세요. 이것들로 현재페이지를 가져오고, 새로운 페이지를 세팅할 겁니다. 또 이 컴퍼넌트의 주석들을 모두 지우세요. 우리 어플리케이션은 `<Pagination />`을 아직 구현하지 않았으므로, 일시적으로 동작하지 않습니다.
+
+<div class="code-with-file">
+/app/ui/invoices/pagination.tsx
+
+```
+'use client';
+ 
+import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import clsx from 'clsx';
+import Link from 'next/link';
+import { generatePagination } from '@/app/lib/utils';
+import { usePathname, useSearchParams } from 'next/navigation';
+ 
+export default function Pagination({ totalPages }: { totalPages: number }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentPage = Number(searchParams.get('page')) || 1;
+ 
+  // ...
+}
+```
+</div>
+
+다음으로 `<Pagination>` 컴퍼넌트 내에 `createPageURL`이라는 함수를 생성합시다. 검색과 비슷하게, 새로운 페이지 넘버를 세팅하기 위해 `URLSearchParams`을, URL 문자열을 생성하기 위해 `pathName`을 사용합니다.
+
+<div class="code-with-file">
+/app/ui/invoices/pagination.tsx
+
+```
+'use client';
+ 
+import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import clsx from 'clsx';
+import Link from 'next/link';
+import { generatePagination } from '@/app/lib/utils';
+import { usePathname, useSearchParams } from 'next/navigation';
+ 
+export default function Pagination({ totalPages }: { totalPages: number }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentPage = Number(searchParams.get('page')) || 1;
+ 
+  const createPageURL = (pageNumber: number | string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', pageNumber.toString());
+    return `${pathname}?${params.toString()}`;
+  };
+ 
+  // ...
+}
+```
+</div>
+
+무엇이 일어나고 있는지 확인해보세요:
+
+- `createPageURL`는 현재 검색 파라미터의 URL 인스턴스를 생성합니다.
+- 그리고 "페이지" 파라미터를 함수의 인자로 받은 페이지 넘버로 업데이트 합니다.
+- 마지막으로, 업데이트된 검색 파라미터와, 경로로 된 최종 URL로 페이지를 구축합니다.
+
+`<Pagination>`컴퍼넌트의 나머지 부분은 스타일링과, 다른 상태들(첫번째 페이지, 마지막 페이지, 활성화된 페이지, 불가능한 상태 등)에 대한 것들을 다루고 있습니다. 우리는 이 강의에서 그러한 디테일을 다루지 않을 것이지만, 자유롭게 createPageURL이 호출되는 부분을 보아도 됩니다.
+
+마지막으로 유저가 검색어를 입력하면, 페이지 넘버를 1로 다시 리셋하고 싶을 겁니다. `<Search>`컴퍼넌트의 `handleSearch` 함수를 업데이트 하는 것으로 할 수 있습니다.
+
+<div class="code-with-file">
+/app/ui/search.tsx
+
+```
+'use client';
+ 
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useDebouncedCallback } from 'use-debounce';
+ 
+export default function Search({ placeholder }: { placeholder: string }) {
+  const searchParams = useSearchParams();
+  const { replace } = useRouter();
+  const pathname = usePathname();
+ 
+  const handleSearch = useDebouncedCallback((term) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', '1');
+    if (term) {
+      params.set('query', term);
+    } else {
+      params.delete('query');
+    }
+    replace(`${pathname}?${params.toString()}`);
+  }, 300);
+
+```
+</div>
+
+
+## 요약
+
+축하합니다! Next.js API와 URL 파라미터를 이용한 검색과 페이지네이션(pagination)을 구현했습니다.
+
+이번 챕터를 요약하면:
+
+- client의 state를 이용하는 것 대신, URL 검색 파라미터를 이용해 검색과 페이지네이션을 구현했습니다.
+- 서버로부터 데이터를 가져왔습니다.
+- `useRouter` 훅을 사용해 부드러운 클라이언트 사이드 전환을 했습니다.
+
+이러한 방식은 우리가 React로 작업을 했을때와 다를 겁니다. 하지만 다행히 이제 우리는 URL 검색 파라미터를 이용했을때의 장점과, 상태를 서버로 올리는것에 장점을 알게 되었습니다.
 
 
 <div class="finish">
-  <p class="finish__title">챕터 10를 완료했습니다.</p>
-  <p>Next.js 14에 소개되어진, 빠른 렌더링 모델인 부분 미리 렌더링에 대해 배웠습니다.</p>
+  <p class="finish__title">챕터 11을 완료했습니다.</p>
+  <p>이제 우리의 대시보드가 검색과 페이지네이션 기능을 갖췄습니다.</p>
   <div class="next-box">
     <p class="next">다음</p>    
-    <p class="next__title">11: 검색과 페이지네이션 추가하기</p>
-    <p>Next.js API로 검색과 페이지네이션을 어떻게 하는지 배웁니다.</p>
-    <a id="next__btn" href="https://nextjs.org/learn/dashboard-app/adding-search-and-pagination">챕터 11 시작하기
+    <p class="next__title">데이터 변형(Mutating)</p>
+    <p>Server Action으로 데이터를 변형하는 방법을 알아봅시다.</p>
+    <a id="next__btn" href="https://nextjs.org/learn/dashboard-app/mutating-data">챕터 12 시작하기
     <svg data-testid="geist-icon" height="16" stroke-linejoin="round" viewBox="0 0 16 16" width="16" style="color: currentcolor;"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.53033 2.21968L9 1.68935L7.93934 2.75001L8.46967 3.28034L12.4393 7.25001H1.75H1V8.75001H1.75H12.4393L8.46967 12.7197L7.93934 13.25L9 14.3107L9.53033 13.7803L14.6036 8.70711C14.9941 8.31659 14.9941 7.68342 14.6036 7.2929L9.53033 2.21968Z" fill="currentColor"></path></svg>
     </a>
   </div>
 </div>
 
 ## Ref
-- [https://nextjs.org/learn/dashboard-app/partial-prerendering](https://nextjs.org/learn/dashboard-app/partial-prerendering)
+- [https://nextjs.org/learn/dashboard-app/adding-search-and-pagination](https://nextjs.org/learn/dashboard-app/adding-search-and-pagination)
 
 
 <link rel="stylesheet" href="https://eso0117.github.io/web-practice/public/next-js-tutorial/css.css">
