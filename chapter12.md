@@ -230,7 +230,52 @@ HTML에서 `action`에 URL을 넣곤 했을겁니다. 이 URL은 폼(form) 데�
 
 </div>
 
-### 3. `formData`로부터 데이터 추출하기
+### 3. `formData` 으로부터 데이터 추출하기
+
+`actions.ts`로 돌아가서, `formData`의 값을 추출할 필요가 있습니다. [수많은 방법](https://developer.mozilla.org/en-US/docs/Web/API/FormData/append)이 있는데, 이 강의에서는 [`.get(name)`](https://developer.mozilla.org/en-US/docs/Web/API/FormData/get) 메소드를 쓰겠습니다.
+
+<div class="code-with-file">
+
+**/app/lib/actions.ts**
+```
+'use server';
+ 
+export async function createInvoice(formData: FormData) {
+  const rawFormData = {
+    customerId: formData.get('customerId'),
+    amount: formData.get('amount'),
+    status: formData.get('status'),
+  };
+  // Test it out:
+  console.log(rawFormData);
+}
+```
+</div>
+
+<div class="hint">
+
+**Tip:**
+만약 많은 필드를 가진 폼(form)으로 작업을 한다면, 자바스크립트 [`Object.fromEntries()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/fromEntries)와 [`entries()`](https://developer.mozilla.org/en-US/docs/Web/API/FormData/entries)의 사용을 고려해보세요. 
+
+예를 들어:
+
+```const rawFormData = Object.fromEntries(formData.entries())```
+
+</div>
+
+모든게 다 잘 되었는지 확인하기 위해, 먼저 폼(form)을 입력해봅시다. 제출 버튼을 누른 후에 우리가 폼에 누른 입력을 터미널의 콘솔에서 볼 수 있을겁니다.
+
+이제 우리 데이터가 객체의 모양을 갖췄으니, 작업이 훨씬 쉬워질 겁니다.
+
+### 4. 유효성 검사와 데이터 준비하기
+
+
+
+
+
+
+
+
 
 
 ## 왜 URL 검색 파라미터를 쓰나요?
