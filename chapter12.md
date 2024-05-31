@@ -11,7 +11,7 @@
 
 여기 우리가 다룰 주제들이 있습니다.
 - React Server Action이란 무엇이고 데이터를 변형(mutate)하는데 어떻게 사용하는지
-- 폼(form)과 Server Components로 작업하는 방법
+- 폼(form)과 서버 컴퍼넌트로 작업하는 방법
 - 타입 유효성 검사와 네이티브 `formData` 객체를 사용하는 좋은 방법
 - `revalidatePath` API를 사용한 클라이언트 캐시 리밸리데이션(revalidate) 방법
 - 특정 ID값들을 사용한 동적 라우트 경로 생성 방법
