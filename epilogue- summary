@@ -1,0 +1,17 @@
+- npx create-next-app - chapter 1
+- npm i - chapter 1
+- npm run dev - chapter 1
+- global.css - chapter 2
+- css 모듈 - chapter 2
+- tailwind - chapter 2
+- clsx - chapter 2
+- next/font - chapter 3
+- Image, next/image - chapter 3
+
+
+
+- [Zod](https://zod.dev/) - chapter 12
+- Server Action - chapter 12
+- revalidatePath - chapter 12
+- [`redirect`](https://nextjs.org/docs/app/api-reference/functions/redirect) - chapter 12
+5. 

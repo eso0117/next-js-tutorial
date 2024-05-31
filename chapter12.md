@@ -269,283 +269,256 @@ export async function createInvoice(formData: FormData) {
 
 ### 4. 유효성 검사와 데이터 준비하기
 
-
-
-
-
-
-
-
-
-
-## 왜 URL 검색 파라미터를 쓰나요?
-
-위에 말했듯, 우리는 검색 상태를 관리하기 위해 URL 검색 파라미터를 사용하고 있습니다. 이 패턴은 만약 당신이 클라이언트 스테이트를 사용하는데 익숙하다면 낯선 방법일 겁니다.
-
-- **공유가능하고 저장 가능한 URL**: 검색 파라미터는 URL안에 있기 때문에, 유저는 검색 쿼리와 필터까지 포함한 어플리케이션의 현 상태를 저장 가능하고 후에 공유 및 재참조도 가능합니다.
-- **서버 사이드 렌더링과 초기 불러오기**: URL 파라미터는 초기 상태를 렌더링 하기 위해 서버에서 직접 사용되고 이것은 서버 사이드 렌더링을 쉽게 합니다.
-**분석과 추적**: URL에 쿼리와 필터를 갖고 있는 것은 추가적인 클라이언트 사이드의 로직 없이 유저의 행동을 추적하기 용이하게 만듭니다.
-
-## 검색 기능 추가하기
-
-아래 검색 기능을 구현할 다양한 Next.js의 클라이언트 훅입니다.
-
-- **`useSearchParams`**: 우리가 현재 URL 파라미터의 접근할 수 있게 해줍니다. 예를 들어 `/dashboard/invoices?page=1&query=pending`의 파라미터가 `{page: '1', query: 'pending'}` 처럼 나오게 될겁니다.
-- **`usePathname`**: 현재 URL의 경로를 가져옵니다. 예를 들어 URL `/dashboard/invoices` 경로의 `usePathname`도 `'/dashboard/invoices'`를 리턴할겁니다.
-- **`useRouter`**: 클라이언트 컴퍼넌트간의 경로를 이동하는걸 가능하게 해줍니다. 사용할 수 있는 [다양한 메소드](https://nextjs.org/docs/app/api-reference/functions/use-router#userouter)들이 있습니다.
-
-진행 순서를 빠르게 훑어보면,
-
-1. 유저의 입력 받기
-2. 검색 파라미터로 URL 업데이트
-3. URL을 유저입력필드와 동기화 유지
-4. 검색 쿼리 결과를 반영해 테이블을 업데이트
-
-### 1. 유저 입력 받기
-`/app/ui/search.tsx`경로에 `<Search>` 컴퍼넌트로 가면 다음을 볼 수 있습니다.
-
-- `"use client"` - 이것은 이벤트리스너와 훅을 사용하는 클라이언트 컴퍼넌트라는 선언입니다.
-- `<input>` - 이것은 검색 입력창입니다.
-
-새로운 `handleSearch` 함수를 만듭시다. 그리고 `onChange` 리스터를 `<input>` 에 추가하세요. `onChange`는 입력된 값이 바뀔때마다 `handleSearch`를 실행할겁니다.
+폼(form) 데이터를 데이터 베이스에 전송하기 전에, 정확한 타입을 가진 형태의 데이터인지 확인하고 싶을겁니다. 강의 앞 부분에서, invoices 테이블은 다음과 같은 형태를 가진다고 정의 했었습니다.
 
 <div class="code-with-file">
-/app/ui/search.tsx
 
+**/app/lib/definitions.ts**
 ```
-'use client';
- 
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
- 
-export default function Search({ placeholder }: { placeholder: string }) {
-  function handleSearch(term: string) {
-    console.log(term);
-  }
- 
-  return (
-    <div className="relative flex flex-1 flex-shrink-0">
-      <label htmlFor="search" className="sr-only">
-        Search
-      </label>
-      <input
-        className="peer block w-full rounded-md border border-gray-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500"
-        placeholder={placeholder}
-        onChange={(e) => {
-          handleSearch(e.target.value);
-        }}
-      />
-      <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-    </div>
-  );
-}
+export type Invoice = {
+  id: string; // Will be created on the database
+  customer_id: string;
+  amount: number; // Stored in cents
+  status: 'pending' | 'paid';
+  date: string;
+};
 ```
 </div>
 
-개발툴(Developer Tools) 콘솔에서 `input`에 아무 검색어를 넣어서 잘 동작하는지 확인해봅시다. `input`에 입력한 검색어가 기록될 겁니다.
+아직은, 폼(form) 데이터에서 `customer_id`, `amount`, `status`만 가지고 있습니다.
 
-훌륭합니다! 유저의 입력을 받았어요. 이제 검색어로 URL을 업데이트 합시다.
+#### 유효성 검사와 타입 변환(coercion)
 
-### 2. 검색 파라미터로 URL 업데이트 하기
-
-`useSearchParams`를 `'next/navigation'`에서 불러(import)오세요. 그리고 변수에 할당합니다.
-
-<div class="code-with-file">
-/app/ui/search.tsx
+폼(form)의 데이터가 데이터 베이스 타입과 일치하여 유효한지 검사하는것은 중요합니다. 예를 들어, 액션 내에 `console.log`를 다음과 같이 추가한다면,
 
 ```
-'use client';
+console.log(typeof rawFormData.amount);
+```
+
+`amount`가 `number`가 아닌 `string` 타입이란걸 알 수 있습니다. `type="number`를 갖고 있는 `input`은 실제로 숫자가 아닌 문자열을 반환하기 때문이죠!
+
+타입 유효성 검사를 위해 몇가지 옵션이 있습니다. 일일이 유효성 검사를 하는 방법도 있고, 시간과 노력을 줄이기 위해 유효성 검사 라이브러리를 사용할 수도 있습니다. 이번 예제에서 우리는 유효성 검사를 간단히 할 수 있는 타입스크립트의 라이브러리 [Zod](https://zod.dev/)를 사용할 겁니다.
+
+`action.ts`에 Zod를 불러(import)오고, 폼(form) 오브젝트의 형태와 일치하는 스키마를 정의합시다. 이 스키마는 `formData`를 데이터 베이스에 저장하기 전에 유효성 검사를 할 겁니다.
+
+
+<div class="code-with-file">
+
+**/app/lib/actions.ts**
+
+```
+'use server';
  
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { useSearchParams } from 'next/navigation';
+import { z } from 'zod';
  
-export default function Search() {
-  const searchParams = useSearchParams();
+const FormSchema = z.object({
+  id: z.string(),
+  customerId: z.string(),
+  amount: z.coerce.number(),
+  status: z.enum(['pending', 'paid']),
+  date: z.string(),
+});
  
-  function handleSearch(term: string) {
-    console.log(term);
-  }
+const CreateInvoice = FormSchema.omit({ id: true, date: true });
+ 
+export async function createInvoice(formData: FormData) {
   // ...
 }
 ```
 </div>
 
-`handleSearch`내에, `searchParams` 변수를 인자로 받는 [`URLSearchParams`](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams)을 생성하세요.
+`amount` 필드는 특히 그것의 타입 유효성 검사하는 동안 문자열에서 숫자로 coerce(타입변환)을 설정했습니다.
+
+이제 타입 검사를 위해 `rawFormData`를 `CreateInvoice`로 넘길 수 있습니다.
 
 <div class="code-with-file">
-/app/ui/search.tsx
 
-```
-'use client';
- 
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { useSearchParams } from 'next/navigation';
- 
-export default function Search() {
-  const searchParams = useSearchParams();
- 
-  function handleSearch(term: string) {
-    const params = new URLSearchParams(searchParams);
-  }
-  // ...
-}
-```
-</div>
-
-`URLSearchParam`은 URL 쿼리 파라미터 관련해서 여러 유틸리티 메소드들을 제공하는 웹 API입니다. 복잡한 문자열 리터럴을 사용하는 것 대신, 이것을 사용해서 `?page=1&query=a`같은 문자열 파라미터를 얻을 수 있습니다.
-
-다음으로, 유저 입력에 따라 파라미터 값을 `set` 하세요. 만약 유저 입력이 없다면, 파라미터를 지웁니다.
-
-<div class="code-with-file">
-/app/ui/search.tsx
-
-```
-'use client';
- 
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { useSearchParams } from 'next/navigation';
- 
-export default function Search() {
-  const searchParams = useSearchParams();
- 
-  function handleSearch(term: string) {
-    const params = new URLSearchParams(searchParams);
-    if (term) {
-      params.set('query', term);
-    } else {
-      params.delete('query');
-    }
-  }
-  // ...
-}
-```
-</div>
-
-이제 우리는 쿼리 스트링을 갖게 되었으니, Next.js의 `useRouter`과 `usePathname` 훅을 써서 URL을 업데이트 할 수 있습니다.
-
-`next/navigation`에서 `useRouter`과 `usePathname`을 불러(import)오세요. 그리고 `handleSearch`내에 `useRouter()`에서 `replace` 메소드를 사용합니다.
-
-<div class="/app/ui/search.tsx">
-/app/ui/search.tsx
-
-```
-'use client';
- 
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { useSearchParams, usePathname, useRouter } from 'next/navigation';
- 
-export default function Search() {
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const { replace } = useRouter();
- 
-  function handleSearch(term: string) {
-    const params = new URLSearchParams(searchParams);
-    if (term) {
-      params.set('query', term);
-    } else {
-      params.delete('query');
-    }
-    replace(`${pathname}?${params.toString()}`);
-  }
-}
-```
-</div>
-
-무엇이 일어나고 있는지 설명을 하자면,
--  `${pathname}` 은 현재 경로입니다, 지금의 경우에는 `"/dashboard/invoices"` 입니다.
--  유저가 검색창에 입력을 할때, `params.toString()`은 유저의 입력을 URL에 적합한 형식으로 바꿔줍니다.
--  `replace(${pathname}?${params.toString()})`은 유저의 입력 데이터로 URL을 업데이트 해줍니다. 예를들어, 만약 유저가 `"Lee"`를 검색 했다면 `/dashboard/invoices?query=lee`가 됩니다.
-- Next.js의 클라이언트 사이드 페이지 이동(우리가 챕터 5 - [페이지간 이동](https://thewys.tistory.com/entry/NextJS-튜토리얼-챕터-5-페이지간-이동)에서 배운겁니다.) 덕분에 URL은 페이지 리로딩되는 것 없이 업데이트 됩니다.
-
-### 3. URL과 입력 동기화하기
-
-입력필드가 URL과 동기화되고 공유할때 채워지도록 하기 위해 `searchParams`에서 `defaultValue`를 가져와 input에 전달할 수 있습니다.
-
-<div class="code-with-file">
-/app/ui/search.tsx
-
-
-```
-<input
-  className="peer block w-full rounded-md border border-gray-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500"
-  placeholder={placeholder}
-  onChange={(e) => {
-    handleSearch(e.target.value);
-  }}
-  defaultValue={searchParams.get('query')?.toString()}
-/>
-```
-</div>
-
-<div class="hint">
-
-**`defaultValue` vs `value` / Controlled vs Uncontrolled**
-
-state를 사용하여 입력값을 관리하면, `value` 속성을 사용해 controlled compononent를 만들 것이고, 이는 리액트가 입력 상태를 관리한다는 의미입니다.
-
-그러나 state를 사용하고 있지 않기 때문에, `defaultValue`를 사용할 수 있습니다. 이것은 input이 그 자신의 state를 관리할거란 의미이고, 우리가 state대신 URL에 검색 쿼리를 저장하고 있기 때문에 괜찮습니다.
-
-</div>
-
-### 4. 테이블 업데이트 하기
-
-이제 검색 쿼리를 반영해서 테이블 컴퍼넌트를 업데이트 해야합니다.
-
-invoices 페이지로 돌아갑시다.
-
-Page 컴퍼넌트는  [`searchParams`이라는 prop을 받습니다.](https://nextjs.org/docs/app/api-reference/file-conventions/page), 그래서 현재 URL 파라미터를 `<Table>` 컴퍼넌트로 보낼 수 있습니다.
-
-<div class="code-with-file">
-/app/dashboard/invoices/page.tsx
-
-```
-import Pagination from '@/app/ui/invoices/pagination';
-import Search from '@/app/ui/search';
-import Table from '@/app/ui/invoices/table';
-import { CreateInvoice } from '@/app/ui/invoices/buttons';
-import { lusitana } from '@/app/ui/fonts';
-import { Suspense } from 'react';
-import { InvoicesTableSkeleton } from '@/app/ui/skeletons';
- 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams?: {
-    query?: string;
-    page?: string;
-  };
-}) {
-  const query = searchParams?.query || '';
-  const currentPage = Number(searchParams?.page) || 1;
- 
-  return (
-    <div className="w-full">
-      <div className="flex w-full items-center justify-between">
-        <h1 className={`${lusitana.className} text-2xl`}>Invoices</h1>
-      </div>
-      <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
-        <Search placeholder="Search invoices..." />
-        <CreateInvoice />
-      </div>
-      <Suspense key={query + currentPage} fallback={<InvoicesTableSkeleton />}>
-        <Table query={query} currentPage={currentPage} />
-      </Suspense>
-      <div className="mt-5 flex w-full justify-center">
-        {/* <Pagination totalPages={totalPages} /> */}
-      </div>
-    </div>
-  );
-}
-```
-</div>
-
-`<Table>` 컴퍼넌트를 보면, `query`, `currentPage` 2개의 prop이 해당 쿼리랑 일치하는 송장을 리턴하는 `fetchFilteredInvoices()`의 함수 인자로 들어가는걸 볼겁니다.
-
-<div class="code-with-file">
-/app/ui/invoices/table.tsx
-
+**/app/lib/actions.ts**
 ```
 // ...
+export async function createInvoice(formData: FormData) {
+  const { customerId, amount, status } = CreateInvoice.parse({
+    customerId: formData.get('customerId'),
+    amount: formData.get('amount'),
+    status: formData.get('status'),
+  });
+}
+```
+</div>
+
+#### 값을 cents로 저장하기
+
+통화 값을 cents로 데이터베이스에 저장하는 것은 높은 정확성과 자바스크립트의 부동소수점 오차(floating point) 에러를 없애주는 좋은 방식 입니다.
+
+`amount` 데이터를 cents로 변환해봅시다.
+
+<div class="code-with-file">
+
+**/app/lib/actions.ts**
+```
+// ...
+export async function createInvoice(formData: FormData) {
+  const { customerId, amount, status } = CreateInvoice.parse({
+    customerId: formData.get('customerId'),
+    amount: formData.get('amount'),
+    status: formData.get('status'),
+  });
+  const amountInCents = amount * 100;
+}
+```
+</div>
+
+#### 새로운 날짜 만들기
+
+이제 송장 생성 날짜 명시를 위한 "YYYY-MM-DD" 형식을 가진 날짜 정보를 만들어 봅시다.
+
+<div class="code-with-file">
+
+
+**/app/lib/actions.ts**
+```
+// ...
+export async function createInvoice(formData: FormData) {
+  const { customerId, amount, status } = CreateInvoice.parse({
+    customerId: formData.get('customerId'),
+    amount: formData.get('amount'),
+    status: formData.get('status'),
+  });
+  const amountInCents = amount * 100;
+  const date = new Date().toISOString().split('T')[0];
+}
+```
+</div>
+
+### 5. 데이터베이스에 데이터 넣기
+
+이제 데이터베이스에 필요한 모든 값들을 가지고 있으니, 새로운 송장을 데이터베이스에 넣고 변수를 전달하는 SQL 쿼리를 만들 수 있습니다.
+
+<div class="code-with-file">
+
+**/app/lib/actions.ts**
+
+```
+import { z } from 'zod';
+import { sql } from '@vercel/postgres';
+ 
+// ...
+ 
+export async function createInvoice(formData: FormData) {
+  const { customerId, amount, status } = CreateInvoice.parse({
+    customerId: formData.get('customerId'),
+    amount: formData.get('amount'),
+    status: formData.get('status'),
+  });
+  const amountInCents = amount * 100;
+  const date = new Date().toISOString().split('T')[0];
+ 
+  await sql`
+    INSERT INTO invoices (customer_id, amount, status, date)
+    VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
+  `;
+}
+```
+</div>
+
+아직 우리는 어떤 에러도 다루고 있지 않습니다. 그것은 다음 챕터에서 다룰 예정이고, 지금은 다음 과정으로 넘어갑시다.
+
+### 6. Revalidate 그리고 Redirect
+
+Next.js는 유저의 브라우저 내에 라우트 경로를 저장하는 [클라이언트 사이드 라우터 캐시](https://nextjs.org/docs/app/building-your-application/caching#router-cache)를 가지고 있습니다. [미리 가져오기](https://nextjs.org/docs/app/building-your-application/routing/linking-and-navigating#1-prefetching)와 이것은 라우트 간의 이동에서 서버에게 가는 요청 수를 줄이며 빠르게 유저가 페이지를 이동할 수 있게 해줍니다.
+
+invoices 라우터에서 표시되는 데이터를 업데이트 하고 있기때문에, 이 캐시를 클리어하고, 서버에 새로운 요청을 보낼 필요가 있습니다. 우리는 이것을 Next.js의 `revalidatePath` 함수로 할 수 있습니다.
+
+<div class="">
+
+**/app/lib/actions.ts**
+
+```
+'use server';
+ 
+import { z } from 'zod';
+import { sql } from '@vercel/postgres';
+import { revalidatePath } from 'next/cache';
+ 
+// ...
+ 
+export async function createInvoice(formData: FormData) {
+  const { customerId, amount, status } = CreateInvoice.parse({
+    customerId: formData.get('customerId'),
+    amount: formData.get('amount'),
+    status: formData.get('status'),
+  });
+  const amountInCents = amount * 100;
+  const date = new Date().toISOString().split('T')[0];
+ 
+  await sql`
+    INSERT INTO invoices (customer_id, amount, status, date)
+    VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
+  `;
+ 
+  revalidatePath('/dashboard/invoices');
+}
+```
+</div>
+
+데이터베이스가 업데이트 되면, `/dashboard/invoices` 경로는 revalidate 되고 새로운 데이터를 가져올 겁니다.
+
+이 지점에서 우리는 유저가 `/dashboard/invoices` 경로로 리다이렉트 되길 원합니다. 이것은 Next.js의 [`redirect`](https://nextjs.org/docs/app/api-reference/functions/redirect) 함수로 가능합니다.
+
+
+<div class="code-with-file">
+
+**/app/lib/actions.ts**
+```
+'use server';
+ 
+import { z } from 'zod';
+import { sql } from '@vercel/postgres';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+ 
+// ...
+ 
+export async function createInvoice(formData: FormData) {
+  // ...
+ 
+  revalidatePath('/dashboard/invoices');
+  redirect('/dashboard/invoices');
+}
+```
+</div>
+
+축하합니다! 우리는 처음으로 Server Action을 구현했습니다. 새로운 송장을 추가하면서 모든게 정상적으로 동작하는지 확인해보세요.
+
+1. 제출 한 후 `/dashboard/invoices`로 리다이렉트 되야합니다.
+2. 테이블의 최상단에 새롭게 생성된 송장을 볼 수 있어야 합니다.
+
+## 송장 업데이트
+
+송장을 업데이트 하는 양식과 생성하는 양식은 데이터베이스에서 업데이트 되어야할 송장의 `id`를 넘겨야하는것을 제외하고는 비슷합니다. 어떻게 `id`를 얻어서 보내는지 한번 봅시다.
+
+여기 새로운 송장을 만들기 위해 우리가 진행할 과정이 있습니다.
+
+1. 송장의 id를 갖고 있는 새로운 동적 라우트 경로를 생성합니다.
+2. 해당 페이지의 파라미터로부터 송장의 `id`를 읽습니다.
+3. 데이터베이스로부터 해당 송장을 가져옵니다.
+4. 송장의 데이터를 폼(form) 안에 미리 채워 놓습니다.
+5. 데이터베이스 내에 송장 데이터를 업데이트 합니다.
+
+### 1. 송장의 `id`를 갖는 동적 라우트 경로 생성
+
+Next.js에서는 데이터 기반으로 경로를 생성하고 싶거나 정확한 경로를 지정할 수 없을때 [동적 라우트 경로](https://nextjs.org/docs/app/building-your-application/routing/dynamic-routes)를 생성할 수 있습니다. 이것은 블로그 글의 제목, 상품 페이지 기타 등등이 될 수 있습니다. `[id]`, `[post]` 또는 `[slug]` 같이 대괄호로 지어진 폴더 명으로 동적 라우트 경로를 만들 수 있습니다.
+
+`/invoices` 폴더에서, `[id]` 란 이름의 동적 라우트를 생성합시다. 그리고 `edit`이란 이름의 새로운 라우트와 `page.tsx`를 생성합니다. 파일 구조는 아래와 같을 겁니다.
+
+<img src="https://nextjs.org/_next/image?url=%2Flearn%2Fdark%2Fedit-invoice-route.png&w=1920&q=75" alt="송장 수정하기 파일 구조">
+
+<Table> 컴퍼넌트 내에, 테이블의 레코드로 부터 송장의 id를 받는 `<updateInvoice />` 버튼을 보세요.
+
+<div class="code-with-file">
+
+**/app/ui/invoices/table.tsx**
+```
 export default async function InvoicesTable({
   query,
   currentPage,
@@ -553,363 +526,301 @@ export default async function InvoicesTable({
   query: string;
   currentPage: number;
 }) {
-  const invoices = await fetchFilteredInvoices(query, currentPage);
-  // ...
-}
-```
-</div>
-
-이 변경사항이 적용되면 테스트를 시작해봅시다. 검색어를 입력하면, URL이 업데이트 될 것이고, 서버로부터 데이터를 가져오라는 명령을 보냅니다. 그리고 쿼리랑 매치되는 송장들만 리턴될 겁니다.
-
-<div class="hint">
-
-**언제 `useSearchParams()` 훅을쓰고, 언제 `searchParams` prop을 쓰나요?**
-
-이 강의를 진행하면서, 검색 파라미터를 가져오는 두가지 방법이 있는걸 알았을 겁니다. 각각을 쓰는 것은 현재 client에서 작업하는지 server에서 작업하는지에 달려있습니다.
-
-- `<Search>`는 클라이언트 컴퍼넌트입니다. 클라이언트에서 파라미터에 접근하려면 `useSearchParams()` 훅을 써야합니다.
-- `<Table>`은 서버 컴퍼넌트입니다. 페이지로부터 `searchParams` prop을 사용해 해당 컴퍼넌트에 전달할 수 있습니다.
-
-</div>
-
-### 좋은 방법: 디바운싱(Debouncing)
-축하합니다! Next.js로 검색을 구현했습니다! 그런데 이것을 최적화 할 방법이 더 있습니다.
-
-`handleSearch` 함수 내에, `console.log`를 추가해 봅시다.
-
-<div class="code-with-file">
-/app/ui/search.tsx
-
-```
-function handleSearch(term: string) {
-  console.log(`Searching... ${term}`);
- 
-  const params = new URLSearchParams(searchParams);
-  if (term) {
-    params.set('query', term);
-  } else {
-    params.delete('query');
-  }
-  replace(`${pathname}?${params.toString()}`);
-}
-```
-</div>
-
-그리고 검색바에 "Emil" 을 입력하고, 개발툴 콘솔을 확인해봅시다. 어떤가요?
-
-<div class=code-with-file>
-Dev Tools Console
-
-```
-Searching... E
-Searching... Em
-Searching... Emi
-Searching... Emil
-```
-</div>
-
-모든 키 입력에 따라 URL을 업데이트 하고 있습니다. 즉 매번 키 입력마다 데이터베이스에 질의가 되고 있는거죠! 이것은 우리의 어플리케이션이 작을때는 문제가 아니겠지만, 어플리케이션이 수천명의 유저를 가지고 있고, 각각의 유저가 모든 키 입력마다 데이터베이스에 질의를 요청한다 생각해보세요.
-
-**디바운싱(Debouncing)** 은 특정 함수가 실행되는 것에 제한을 두는 프로그래밍 방법입니다. 우리의 경우에는 유저가 입력을 멈췄을 때에만 질의를 해야 합니다.
-
-<div class="hint">
-
-**디바운스가 동작하는 방법**
-
-1. **이벤트 발생**: 디바운스가 되어야할 이벤트(검색박스에 입력 같은)가 발생될때, 타이머가 시작됩니다.
-2. **Wait**: 새로운 이벤트가 발생되면, 타이머는 리셋됩니다.
-3. **실행**: 타이머가 시간이 되면, 디바운스된 함수가 실행됩니다. 
-
-</div>
-
-디바운싱(Debouncing)을 구현 하는데는, 스스로 그 함수를 구현하는걸 포함해서 몇가지 방법이 있습니다. 우리는 간단히 하기 위해서, [`use-debounce`](https://www.npmjs.com/package/use-debounce)라는 라이브러리를 사용하겠습니다.
-
-<div class="code-with-file">
-Terminal
-
-```
-npm i use-debounce
-```
-</div>
-
-이제 `<Search>` 컴퍼넌트에서, `useDebouncedCallback` 함수를 불러(import)오세요.
-
-<div class="code-with-file">
-/app/ui/search.tsx
-
-```
-// ...
-import { useDebouncedCallback } from 'use-debounce';
- 
-// Inside the Search Component...
-const handleSearch = useDebouncedCallback((term) => {
-  console.log(`Searching... ${term}`);
- 
-  const params = new URLSearchParams(searchParams);
-  if (term) {
-    params.set('query', term);
-  } else {
-    params.delete('query');
-  }
-  replace(`${pathname}?${params.toString()}`);
-}, 300);
-```
-</div>
-
-이 함수는 handleSearch의 컨텐츠를 감쌉니다. 그리고 유저가 입력을 끝내면(300ms) 해당 코드를 동작시킵니다.
-
-이제 검색바에 입력을 해보세요, 그리고 개발툴의 콘솔을 열어보세요. 다음과 같이 잘 작동하는걸 확인할 수 있습니다.
-
-<div class="code-with-file">
-Dev Tools Console
-
-```
-Searching... Emil
-```
-</div>
-
-디바운싱(Debouncing)으로, 데이터베이스에 보내는 요청을 줄일 수 있고, 결국 리소스를 아낄 수 있습니다.
-
-<div class="quiz">
-  <div class="quiz__icon">
-    <svg fill="none" height="32" viewBox="0 0 32 32" width="32" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#clip0_132_19094)"><path clip-rule="evenodd" d="M16 30.5C24.0081 30.5 30.5 24.0081 30.5 16C30.5 7.99187 24.0081 1.5 16 1.5C7.99187 1.5 1.5 7.99187 1.5 16C1.5 24.0081 7.99187 30.5 16 30.5ZM16 32C24.8366 32 32 24.8366 32 16C32 7.16344 24.8366 0 16 0C7.16344 0 0 7.16344 0 16C0 24.8366 7.16344 32 16 32ZM17.5 22C17.5 22.8284 16.8284 23.5 16 23.5C15.1716 23.5 14.5 22.8284 14.5 22C14.5 21.1716 15.1716 20.5 16 20.5C16.8284 20.5 17.5 21.1716 17.5 22ZM13.5142 11.3218C13.9564 10.391 14.9041 9.75 16 9.75C17.5188 9.75 18.75 10.9812 18.75 12.5C18.75 13.8852 17.7252 15.0323 16.3926 15.2223C15.8162 15.3045 15.25 15.787 15.25 16.5V17.25V18H16.75V17.25V16.6839C18.7397 16.3292 20.25 14.5916 20.25 12.5C20.25 10.1528 18.3472 8.25 16 8.25C14.3035 8.25 12.8406 9.24406 12.1593 10.6782L11.8375 11.3556L13.1924 11.9993L13.5142 11.3218Z" fill="currentColor" fill-rule="evenodd"></path></g><defs><clipPath id="clip0_132_19094"><rect fill="currentColor" height="32" width="32"></rect></clipPath></defs></svg>
-  </div>
-  <p class="quiz__title">퀴즈할 시간입니다!</p>
-  <p class="quiz__desc">익힌걸 테스트해보고 무엇을 배웠는지 봅시다.</p>
-  <div class="quiz__box">
-    <p class="quiz__question">디바운싱이 검색기능에 있어서 해결해준건 무엇인가요?</p>
-    <div class="option-list">
-      <div class="option" data-question-number="01">
-        <span class="option__number">A</span>
-        <span class="option__desc">데이터베이스 질의 속도 향상</span>
-      </div>
-      <div class="option" data-question-number="01">
-        <span class="option__number">B</span>
-        <span class="option__desc">URL을 북마크 할 수 있도록 해줌</span>
-      </div>
-      <div class="option" data-question-number="01"
-      data-answer="true">
-        <span class="option__number">C</span>
-        <span class="option__desc">모든 키 입력마다 데이터베이스 요청을 막아줌</span>
-      </div>
-      <div class="option" data-question-number="01">
-        <span class="option__number">D</span>
-        <span class="option__desc">SEO최적화를 도와줌</span>
-      </div>
-    </div>
-    <div class="quiz__btn-container">
-      <button class="quiz__btn"
-        data-js-check-answer data-question="01">
-        정답 확인
-      </button>
-    </div>
-  </div>  
-</div>
-
-## 페이지네이션(Pagination) 추가
-
-검색기능을 추가한 후, 테이블에 한번에 6개까지만 보이는걸 알았나요? `data.ts`에 있는 `fetchFilteredInvoices()` 함수가 페이지당 최대 6개까지만 리턴하기 때문입니다.
-
-페이지네이션을 추가해서 유저들이 다른 페이지를 이동해 모든 송장들을 보는것이 가능해집니다. URL 파라미터를 통해서 어떻게 페이지네이션을 구현하는지 알아봅시다.
-
-`<Pagination/>` 컴퍼넌트로 이동하면 이것은 클라이언트 컴퍼넌트라는 걸 알 수 있습니다. 데이터 베이스의 비밀 값들을 노출 시킬 수 있는 데이터 가져오기를 클라이언트에서 하고 싶지 않을겁니다.(우리는 API 계층을 안 쓰고 있다는걸 기억하세요.)
-대신, 서버에서 데이터를 가져와 prop으로 컴퍼넌트에 전달할 수 있습니다.
-
-`/dashboard/invoices/page.tsx`에서, `fetchInvoicesPages`라는 새로운 함수를 불러(import)오세요. `searchParams`로부터 `query`를 함수 인자로 전달합니다.
-
-<div class="code-with-file">
-/app/dashboard/invoices/page.tsx
-
-```
-// ...
-import { fetchInvoicesPages } from '@/app/lib/data';
- 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams?: {
-    query?: string,
-    page?: string,
-  },
-}) {
-  const query = searchParams?.query || '';
-  const currentPage = Number(searchParams?.page) || 1;
- 
-  const totalPages = await fetchInvoicesPages(query);
- 
   return (
+    // ...
+    <td className="flex justify-end gap-2 whitespace-nowrap px-6 py-4 text-sm">
+      <UpdateInvoice id={invoice.id} />
+      <DeleteInvoice id={invoice.id} />
+    </td>
     // ...
   );
 }
 ```
 </div>
 
-`fetchInvoicesPages`는 검색 쿼리에 따라 총 페이지의 갯수를 반홥합니다. 예를들어 12개의 송장이 검색결과로 매칭된다면, 각 페이지는 6개의 송장씩 총 페이지는 2 페이지가 됩니다.
-
-다음으로, `totalPages` prop을 `<Pagination />` 컴퍼넌트에 전달하세요.
+`<UpdateInvoice />` 컴퍼넌트로 이동해서 `Link`의 `href`를 `id` prop를 받도록 업데이트 하세요. 동적 라우트 경로를 위해 템플릿 리터럴을 사용할 수 있습니다.
 
 <div class="code-with-file">
-/app/dashboard/invoices/page.tsx
 
+**/app/ui/invoices/buttons.tsx**
 ```
+import { PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import Link from 'next/link';
+ 
 // ...
  
-export default async function Page({
-  searchParams,
-}: {
-  searchParams?: {
-    query?: string;
-    page?: string;
-  };
-}) {
-  const query = searchParams?.query || '';
-  const currentPage = Number(searchParams?.page) || 1;
- 
-  const totalPages = await fetchInvoicesPages(query);
- 
+export function UpdateInvoice({ id }: { id: string }) {
   return (
-    <div className="w-full">
-      <div className="flex w-full items-center justify-between">
-        <h1 className={`${lusitana.className} text-2xl`}>Invoices</h1>
-      </div>
-      <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
-        <Search placeholder="Search invoices..." />
-        <CreateInvoice />
-      </div>
-      <Suspense key={query + currentPage} fallback={<InvoicesTableSkeleton />}>
-        <Table query={query} currentPage={currentPage} />
-      </Suspense>
-      <div className="mt-5 flex w-full justify-center">
-        <Pagination totalPages={totalPages} />
-      </div>
-    </div>
+    <Link
+      href={`/dashboard/invoices/${id}/edit`}
+      className="rounded-md border p-2 hover:bg-gray-100"
+    >
+      <PencilIcon className="w-5" />
+    </Link>
   );
 }
 ```
 </div>
 
-`<Pagination />` 컴퍼넌트로 이동해 `usePathname`과 `useSearchParams` 훅을 불러(import)오세요. 이것들로 현재페이지를 가져오고, 새로운 페이지를 세팅할 겁니다. 또 이 컴퍼넌트의 주석들을 모두 지우세요. 우리 어플리케이션은 `<Pagination />`을 아직 구현하지 않았으므로, 일시적으로 동작하지 않습니다.
+### 2. 페이지의 `params`에서 송장의 `id` 읽기
+
+`<Page>` 컴퍼넌트로 돌아가서, 아래의 코드를 붙여 놓읍시다.
 
 <div class="code-with-file">
-/app/ui/invoices/pagination.tsx
 
+**/app/dashboard/invoices/[id]/edit/page.tsx**
 ```
-'use client';
+import Form from '@/app/ui/invoices/edit-form';
+import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
+import { fetchCustomers } from '@/app/lib/data';
  
-import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
-import clsx from 'clsx';
-import Link from 'next/link';
-import { generatePagination } from '@/app/lib/utils';
-import { usePathname, useSearchParams } from 'next/navigation';
+export default async function Page() {
+  return (
+    <main>
+      <Breadcrumbs
+        breadcrumbs={[
+          { label: 'Invoices', href: '/dashboard/invoices' },
+          {
+            label: 'Edit Invoice',
+            href: `/dashboard/invoices/${id}/edit`,
+            active: true,
+          },
+        ]}
+      />
+      <Form invoice={invoice} customers={customers} />
+    </main>
+  );
+}
+```
+</div>
+
+이 파일이 다른 폼(`edit-form.tsx` 파일에서 온)을 불러(import)오는걸 제외하고 송장의 `/create` 페이지와 얼마나 유사한지 주목하세요. 이 폼(form)은 고객 이름, 송장의 금액, 상태 값들을 미리 채워야 합니다. 폼 필드에 값을 미리 채워놓기 위해 `id`를 이용해 특정한 송장을 가져와야 합니다.
+
+`searchParam`외에도 추가적으로 페이지 컴퍼넌트는 `param`이란 이름의 prop을 받습니다. 이것을 이용해 `id`를가져올 수 있습니다. `<Page>` 컴퍼넌트를 해당 prop을 받을 수 있게 업데이트 합시다.
+
+<div class="code-with-file">
+
+**/app/dashboard/invoices/[id]/edit/page.tsx**
+```
+import Form from '@/app/ui/invoices/edit-form';
+import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
+import { fetchCustomers } from '@/app/lib/data';
  
-export default function Pagination({ totalPages }: { totalPages: number }) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentPage = Number(searchParams.get('page')) || 1;
- 
+export default async function Page({ params }: { params: { id: string } }) {
+  const id = params.id;
   // ...
 }
 ```
 </div>
 
-다음으로 `<Pagination>` 컴퍼넌트 내에 `createPageURL`이라는 함수를 생성합시다. 검색과 비슷하게, 새로운 페이지 넘버를 세팅하기 위해 `URLSearchParams`을, URL 문자열을 생성하기 위해 `pathName`을 사용합니다.
+### 3. 특정한 송장 가져오기
+
+그리고나서
+
+- `fetchInvoiceById`란 이름의 새로운 함수를 불러(import)오고, id를 함수 인자로 넘기세요.
+- `fetchCustomers`를 불러(import)오고 드랍다운 메뉴에 고객 이름을 표시합니다.
+
+`Promise.all`을 사용해서 송장과 고객들 정보를 병렬로 가져올 수 있습니다.
 
 <div class="code-with-file">
-/app/ui/invoices/pagination.tsx
 
+**/dashboard/invoices/[id]/edit/page.tsx**
 ```
-'use client';
+import Form from '@/app/ui/invoices/edit-form';
+import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
+import { fetchInvoiceById, fetchCustomers } from '@/app/lib/data';
  
-import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
-import clsx from 'clsx';
-import Link from 'next/link';
-import { generatePagination } from '@/app/lib/utils';
-import { usePathname, useSearchParams } from 'next/navigation';
- 
-export default function Pagination({ totalPages }: { totalPages: number }) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentPage = Number(searchParams.get('page')) || 1;
- 
-  const createPageURL = (pageNumber: number | string) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('page', pageNumber.toString());
-    return `${pathname}?${params.toString()}`;
-  };
- 
+export default async function Page({ params }: { params: { id: string } }) {
+  const id = params.id;
+  const [invoice, customers] = await Promise.all([
+    fetchInvoiceById(id),
+    fetchCustomers(),
+  ]);
   // ...
 }
 ```
 </div>
 
-무엇이 일어나고 있는지 확인해보세요:
+`invoice`는 잠재적으로 `undefined`이므로 일시적으로 터미널에서 `invoice` prop에 TS 에러가 나는 걸 볼 겁니다. 지금은 걱정하지 마세요, 우리는 다음 챕터에서 이것을 해결할 겁니다.
 
-- `createPageURL`는 현재 검색 파라미터의 URL 인스턴스를 생성합니다.
-- 그리고 "페이지" 파라미터를 함수의 인자로 받은 페이지 넘버로 업데이트 합니다.
-- 마지막으로, 업데이트된 검색 파라미터와, 경로로 된 최종 URL로 페이지를 구축합니다.
+훌륭합니다. 이제 잘 동작하는지 확인해봅시다.
+[http://localhost:3000/dashboard/invoices](http://localhost:3000/dashboard/invoices)를 방문해서 연필 아이콘을 눌러 송장을 수정해봅시다.
+페이지 이동 후에, 송장의 상세 정보가 미리 입력된 양식을 볼 수 있습니다.
 
-`<Pagination>`컴퍼넌트의 나머지 부분은 스타일링과, 다른 상태들(첫번째 페이지, 마지막 페이지, 활성화된 페이지, 불가능한 상태 등)에 대한 것들을 다루고 있습니다. 우리는 이 강의에서 그러한 디테일을 다루지 않을 것이지만, 자유롭게 createPageURL이 호출되는 부분을 보아도 됩니다.
+<img src="https://nextjs.org/_next/image?url=%2Flearn%2Fdark%2Fedit-invoice-page.png&w=1080&q=75" alt="송장 수정 화면">
 
-마지막으로 유저가 검색어를 입력하면, 페이지 넘버를 1로 다시 리셋하고 싶을 겁니다. `<Search>`컴퍼넌트의 `handleSearch` 함수를 업데이트 하는 것으로 할 수 있습니다.
+URL도 다음과 같이 `id`로 업데이트 되어야 합니다.
 
-<div class="code-with-file">
-/app/ui/search.tsx
+`http://localhost:3000/dashboard/invoice/uuid/edit`
 
-```
-'use client';
- 
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useDebouncedCallback } from 'use-debounce';
- 
-export default function Search({ placeholder }: { placeholder: string }) {
-  const searchParams = useSearchParams();
-  const { replace } = useRouter();
-  const pathname = usePathname();
- 
-  const handleSearch = useDebouncedCallback((term) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('page', '1');
-    if (term) {
-      params.set('query', term);
-    } else {
-      params.delete('query');
-    }
-    replace(`${pathname}?${params.toString()}`);
-  }, 300);
+<div class="hint">
 
-```
+**UUIDs vs. Auto-incrementing Keys**
+
+우리는 증가값(1, 2, 3... etc) 을 키로 갖는것 대신 UUID를 사용합니다. 이것은 URL을 더 길게 만들지만, 전역적으로 유니크하여 ID충돌의 위험을 없앱니다, 그리고
+열거 공격의 위험을 줄여 대규모 데이터베이스에 이상적입니다.
+
+하지만, 만약 더 깔끔한 URL형태를 좋아한다면, 자동으로 증가하는 key 형태를 선호할 겁니다.
+
 </div>
 
 
-## 요약
+### `id`를 Server Action에 보내기
 
-축하합니다! Next.js API와 URL 파라미터를 이용한 검색과 페이지네이션(pagination)을 구현했습니다.
+이제 `id`를 Server Action으로 보내서 옳은 기록을 업데이트 할 수 있게 만들고 싶습니다. 하지만 아래와 같이 `id`는 함수 인자로 보내질 수 없습니다.
 
-이번 챕터를 요약하면:
+<div class="code-with-file">
 
-- client의 state를 이용하는 것 대신, URL 검색 파라미터를 이용해 검색과 페이지네이션을 구현했습니다.
-- 서버로부터 데이터를 가져왔습니다.
-- `useRouter` 훅을 사용해 부드러운 클라이언트 사이드 전환을 했습니다.
+**/app/ui/invoices/edit-form.tsx**
 
-이러한 방식은 우리가 React로 작업을 했을때와 다를 겁니다. 하지만 다행히 이제 우리는 URL 검색 파라미터를 이용했을때의 장점과, 상태를 서버로 올리는것에 장점을 알게 되었습니다.
+```
+// Passing an id as argument won't work
+<form action={updateInvoice(id)}>
+```
+</div>
+
+대신, JS `bind`를 이용해서 `id`를 Server Action으로 보낼 수 있습니다. 이렇게 하면 Server Action으로 보내지는 모든 값이 인코딩 됩니다.
+
+
+<div class="code-with-file">
+
+**/app/ui/invoices/edit-form.tsx**
+```
+// ...
+import { updateInvoice } from '@/app/lib/actions';
+ 
+export default function EditInvoiceForm({
+  invoice,
+  customers,
+}: {
+  invoice: InvoiceForm;
+  customers: CustomerField[];
+}) {
+  const updateInvoiceWithId = updateInvoice.bind(null, invoice.id);
+ 
+  return (
+    <form action={updateInvoiceWithId}>
+      <input type="hidden" name="id" value={invoice.id} />
+    </form>
+  );
+}
+```
+</div>
+
+<div class="hint">
+
+**Note:** 폼(form) 안에 hidden input 필드를 사용해도 동작은 합니다(`<input type="hidden" name="id" value={invoice.id} />`). 
+
+하지만, HTML 소스에서 값이 완전히 노출되고 이것은 IDs같은 민감한 데이터에는 이상적인 방식이 아닙니다.
+
+</div>
+<br>
+
+이제 `actions.ts` 파일에서 `updateInvoice` 라는 새로운 action을 생성합시다.
+
+<div class="code-with-file">
+
+**/app/lib/actions.ts**
+```
+// Use Zod to update the expected types
+const UpdateInvoice = FormSchema.omit({ id: true, date: true });
+ 
+// ...
+ 
+export async function updateInvoice(id: string, formData: FormData) {
+  const { customerId, amount, status } = UpdateInvoice.parse({
+    customerId: formData.get('customerId'),
+    amount: formData.get('amount'),
+    status: formData.get('status'),
+  });
+ 
+  const amountInCents = amount * 100;
+ 
+  await sql`
+    UPDATE invoices
+    SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
+    WHERE id = ${id}
+  `;
+ 
+  revalidatePath('/dashboard/invoices');
+  redirect('/dashboard/invoices');
+}
+```
+</div>
+
+`createInvoice` action과 비슷하게,
+
+1. `formData`로 부터 데이터를 추출합니다.
+2. Zod를 이용해 타입 유효성 검사를 합니다.
+3. 금액을 cents로 바꿉니다.
+4. 변수를 SQL 쿼리에 전달합니다.
+5. 클라이언트 캐시를 삭제하고, 새로운 서버 요청을 위해 `revalidatePath`를 호출합니다.
+6. 유저를 송장 페이지로 리다이렉트 시키기 위해 `redirect`를 호출합니다.
+
+## 송장 지우기
+
+Server Action을 이용해서 송장을 지우기 위해, 삭제 버튼을 `<form>` 요소로 감싸고 `bind`를 사용해 `id`를 Server Action으로 보내세요.
+
+<div class="code-with-file">
+
+**/app/ui/invoices/buttons.tsx**
+```
+import { deleteInvoice } from '@/app/lib/actions';
+ 
+// ...
+ 
+export function DeleteInvoice({ id }: { id: string }) {
+  const deleteInvoiceWithId = deleteInvoice.bind(null, id);
+ 
+  return (
+    <form action={deleteInvoiceWithId}>
+      <button className="rounded-md border p-2 hover:bg-gray-100">
+        <span className="sr-only">Delete</span>
+        <TrashIcon className="w-4" />
+      </button>
+    </form>
+  );
+}
+```
+</div>
+
+`action.ts` 파일 내에, `deleteInvoice`라는 새로운 action을 생성합니다.
+
+<div class="code-with-file">
+
+**/app/lib/actions.ts**
+```
+export async function deleteInvoice(id: string) {
+  await sql`DELETE FROM invoices WHERE id = ${id}`;
+  revalidatePath('/dashboard/invoices');
+}
+```
+</div>
+
+이 action은 `/dashboard/invoices` 경로에서 호출되기 떄문에, `redirect`를 호출할 필요 없습니다. `revalidatePath` 호출은 새로운 서버요청과 테이블을 다시 렌더링 하라는 트리거 입니다.
+
+## 더 읽을거리
+
+이 챕터에서, Server Action을 사용해 데이터를 변형(mutate)하는 방법을 배웠습니다. 또한 `revalidatePath` API를 호출해 Next.js 캐시를 revalidate하고 `redirect`로 유저를 새로운 페이지로 리다이렉트 하는걸 배웠습니다.
+
+또한 [Server Action과 보안](https://nextjs.org/blog/security-nextjs-server-components-actions)을 읽으면서 추가적으로 더 배울 수 있습니다.
 
 
 <div class="finish">
-  <p class="finish__title">챕터 11을 완료했습니다.</p>
-  <p>이제 우리의 대시보드가 검색과 페이지네이션 기능을 갖췄습니다.</p>
+  <p class="finish__title">챕터 12를 완료했습니다.</p>
+  <p>축하합니다! form과 React Server Action으로 데이터를 변형(mutate)하는 법을 배웠습니다.</p>
   <div class="next-box">
     <p class="next">다음</p>    
-    <p class="next__title">데이터 변형(Mutating)</p>
-    <p>Server Action으로 데이터를 변형하는 방법을 알아봅시다.</p>
-    <a id="next__btn" href="https://nextjs.org/learn/dashboard-app/mutating-data">챕터 12 시작하기
+    <p class="next__title">13. 에러 핸들링</p>
+    <p>오류 처리 및 접근성을 포함해서 폼(form)으로 데이터를 변형(mutate)하는 좋은 방법을 알아봅시다.</p>
+    <a id="next__btn" href="https://nextjs.org/learn/dashboard-app/error-handling">챕터 13 시작하기
     <svg data-testid="geist-icon" height="16" stroke-linejoin="round" viewBox="0 0 16 16" width="16" style="color: currentcolor;"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.53033 2.21968L9 1.68935L7.93934 2.75001L8.46967 3.28034L12.4393 7.25001H1.75H1V8.75001H1.75H12.4393L8.46967 12.7197L7.93934 13.25L9 14.3107L9.53033 13.7803L14.6036 8.70711C14.9941 8.31659 14.9941 7.68342 14.6036 7.2929L9.53033 2.21968Z" fill="currentColor"></path></svg>
     </a>
   </div>
 </div>
 
 ## Ref
-- [https://nextjs.org/learn/dashboard-app/adding-search-and-pagination](https://nextjs.org/learn/dashboard-app/adding-search-and-pagination)
+- [https://nextjs.org/learn/dashboard-app/mutating-data#4-pass-the-id-to-the-server-action](https://nextjs.org/learn/dashboard-app/mutating-data#4-pass-the-id-to-the-server-action)
 
 
 <link rel="stylesheet" href="https://eso0117.github.io/web-practice/public/next-js-tutorial/css.css">
