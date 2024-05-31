@@ -94,12 +94,143 @@ Server Action은 Next.js의 [캐싱](https://nextjs.org/docs/app/building-your-a
 이제 이것이 어떻게 동작하는지 봅시다.
 
 
+## 송장 생성하기
 
+여기 새로운 송장을 만들기 위해 우리가 진행할 과정이 있습니다.
 
+1. 유저의 입력을 받을 폼(form) 생성하기
+2. 새로운 Server Action 생성하고 폼에서 호출하기
+3. Server Action내에서 `formData` 객체로부터 데이터 가져오기
+4. 데이터 유효성 검사하고 데이터베이스에 넣을 준비하기
+5. 데이터를 넣고 에러를 처리하기
+6. 캐시 revalidate하고 유저를 invoices 페이지로 리다이렉트 시키기
 
+### 1. 새로운 라우트와 폼(form) 생성
 
+`invoices` 폴더 내에, `/create` 인 새로운 라우트 경로를 생성하고 `page.tsx` 파일을 만드세요.
 
+<img src="https://nextjs.org/_next/image?url=%2Flearn%2Fdark%2Fcreate-invoice-route.png&w=1920&q=75" alt="invoices 내에 create 폴더와 page.tsx 생성">
 
+이제 이 라우트는 새로운 송장을 만드는데 사용할 겁니다. `page.tsx` 안에, 다음의 코드를 붙여놓고 어떤 코드인지 한번 들여다 봅시다.
+
+<div class="code-with-file">
+
+**/dashboard/invoices/create/page.tsx**
+
+```
+import Form from '@/app/ui/invoices/create-form';
+import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
+import { fetchCustomers } from '@/app/lib/data';
+ 
+export default async function Page() {
+  const customers = await fetchCustomers();
+ 
+  return (
+    <main>
+      <Breadcrumbs
+        breadcrumbs={[
+          { label: 'Invoices', href: '/dashboard/invoices' },
+          {
+            label: 'Create Invoice',
+            href: '/dashboard/invoices/create',
+            active: true,
+          },
+        ]}
+      />
+      <Form customers={customers} />
+    </main>
+  );
+}
+```
+</div>
+
+이 페이지는 `customers`를 가져오고 `<Form>` 컴퍼넌트에 전달하는 서버 컴퍼넌트 입니다. 시간 절약을 위해, `<Form>` 컴퍼넌트를 미리 만들어 놨습니다.
+
+`<Form>`컴퍼넌트로 이동하면, 다음과 같은 폼을 볼겁니다.
+
+- 고객 리스트를 위한 `<select>`(드롭다운) 요소를 1개 갖고 있습니다.
+- 총액을 넣을 `<input>` 요소를 1개 갖고. `type="number"`입니다.
+- 상태를 위한 `type="radio"` `<input>`이 2개 있습니다.
+- `type="submit"`의 버튼 하나가 있습니다.
+
+이제 [http://localhost:3000/dashboard/invoices/create](http://localhost:3000/dashboard/invoices/create)로 가면, 다음과 같은 UI를 볼 수 있습니다.
+
+<img src="https://nextjs.org/_next/image?url=%2Flearn%2Fdark%2Fcreate-invoice-page.png&w=1080&q=75" alt="/invoices/create UI">
+
+### Server Action 생성하기
+
+훌륭합니다. 이제 폼(form)이 제출될때 불려질 Server Action을 생성해 봅시다.
+
+`lib` 디렉토리로 이동해서 `action.ts`라는 이름의 새로운 파일을 생성합시다. 파일 상단에 React [use server](https://react.dev/reference/react/use-server) 지시자를 추가합니다.
+
+<div class="code-with-file">
+
+**/app/lib/actions.ts**
+```
+'use server';
+```
+</div>
+
+`'use server'`를 추가함으로서, 파일 내에 모든 내보내지는 함수들은(exported function) 서버 함수라고 표시를 합니다. 이 서버 함수들은 클라이언트와 서버 컴퍼넌트 모두에서 불러(import)올 수 있으므로, 다양하게 사용할 수 있습니다.
+
+그리고 또한 "use server"를 액션 내에 추가함으로서 Server Action을 서버 컴퍼넌트 내에 바로 쓸 수 있습니다. 하지만 이 강의에서는 별도의 파일로 정리해서 갖고 있겠습니다.
+
+이제 `action.ts` 파일 내에, `formData`를 받는 비 동기 함수를 생성하세요.
+
+<div class="code-with-file">
+
+**/app/lib/actions.ts**
+
+```
+'use server';
+ 
+export async function createInvoice(formData: FormData) {}
+```
+</div>
+
+그런 다음, `actions.ts` 파일 내에 `createInvoice`를 `<Form>` 컴퍼넌트에서 불러(import)옵시다. `<form>`요소에 `action` 속성을 추가하세요, 그리고 `createInvoice` 액션을 넣으세요.
+
+<div class="code-with-file">
+
+**/app/ui/invoices/create-form.tsx**
+```
+import { customerField } from '@/app/lib/definitions';
+import Link from 'next/link';
+import {
+  CheckIcon,
+  ClockIcon,
+  CurrencyDollarIcon,
+  UserCircleIcon,
+} from '@heroicons/react/24/outline';
+import { Button } from '@/app/ui/button';
+import { createInvoice } from '@/app/lib/actions';
+ 
+export default function Form({
+  customers,
+}: {
+  customers: customerField[];
+}) {
+  return (
+    <form action={createInvoice}>
+      // ...
+  )
+}
+```
+</div>
+
+<div class="hint">
+
+**알면 좋은 것**
+
+HTML에서 `action`에 URL을 넣곤 했을겁니다. 이 URL은 폼(form) 데이터가 제출 될 목적지가 됩니다.(보통은 API의 엔드포인트)
+
+그러나 React에서 `action` 요소는 특별한 prop으로 간주됩니다. React가 그 위에서 액션을 호출 할 수 있도록 빌드된다는 의미입니다.
+
+화면 뒤에서, Server Actions은 POST API endpoint를 생성합니다. 이것이 우리가 API endpoint를 따로 생성할 필요 없었던 이유입니다.
+
+</div>
+
+### 3. `formData`로부터 데이터 추출하기
 
 
 ## 왜 URL 검색 파라미터를 쓰나요?
