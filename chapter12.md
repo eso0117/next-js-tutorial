@@ -5,7 +5,7 @@
 
 # 데이터 변형(Mutating)
 
-이전 챕터에서 우리는 URL 검색 파라미터와 Next.js API를 이용해 검색과 페이지네이션(Pagination) 기능을 구현했습니다. 이제 invoices 페이지에 송장을 추가,업데이트, 삭제하는 기능을 추가해봅시다.
+이전 챕터에서 우리는 URL 검색 파라미터와 Next.js API를 이용해 검색과 페이지네이션(Pagination) 기능을 구현했습니다. 이제 invoices 페이지에 송장을 추가, 업데이트, 삭제하는 기능을 추가해봅시다.
 
 ## 이번 챕터에서...
 
@@ -53,7 +53,7 @@ export default function Page() {
 
 ## Server Action Next.js
 
-Server Action은 Next.js의 [캐싱](https://nextjs.org/docs/app/building-your-application/caching)과 깊게 통합되어 있습니다. 폼(form)이 Server Action으로 전송될때, 데이터를 변경(mutate)하기위해 action을 쓸 수 있는것 뿐 아니라, `revalidatePath`와 `revalidateTag` 같은 API들을 통해 관련된 캐시를 revalidate 할 수 있습니다.
+Server Action은 Next.js의 [캐싱](https://nextjs.org/docs/app/building-your-application/caching)과 깊게 연결되어 있습니다. 폼(form)이 Server Action으로 전송될때, 데이터를 변경(mutate)하기위해 action을 쓸 수 있는것 뿐 아니라, `revalidatePath`와 `revalidateTag` 같은 API들을 통해 관련된 캐시를 revalidate 할 수 있습니다.
 
 <div class="quiz">
   <div class="quiz__icon">
@@ -495,7 +495,7 @@ export async function createInvoice(formData: FormData) {
 
 ## 송장 업데이트
 
-송장을 업데이트 하는 양식과 생성하는 양식은 데이터베이스에서 업데이트 되어야할 송장의 `id`를 넘겨야하는것을 제외하고는 비슷합니다. 어떻게 `id`를 얻어서 보내는지 한번 봅시다.
+송장을 업데이트 하는 방식과 생성하는 방식은 데이터베이스에서 업데이트 되어야할 송장의 `id`를 넘겨야하는것을 제외하고는 비슷합니다. 어떻게 `id`를 얻어서 보내는지 한번 봅시다.
 
 여기 새로운 송장을 만들기 위해 우리가 진행할 과정이 있습니다.
 
@@ -513,7 +513,7 @@ Next.js에서는 데이터 기반으로 경로를 생성하고 싶거나 정확�
 
 <img src="https://nextjs.org/_next/image?url=%2Flearn%2Fdark%2Fedit-invoice-route.png&w=1920&q=75" alt="송장 수정하기 파일 구조">
 
-<Table> 컴퍼넌트 내에, 테이블의 레코드로 부터 송장의 id를 받는 `<updateInvoice />` 버튼을 보세요.
+`<Table>` 컴퍼넌트 내에, 테이블의 레코드로 부터 송장의 id를 받는 `<updateInvoice />` 버튼을 보세요.
 
 <div class="code-with-file">
 
@@ -667,7 +667,7 @@ URL도 다음과 같이 `id`로 업데이트 되어야 합니다.
 
 ### `id`를 Server Action에 보내기
 
-이제 `id`를 Server Action으로 보내서 옳은 기록을 업데이트 할 수 있게 만들고 싶습니다. 하지만 아래와 같이 `id`는 함수 인자로 보내질 수 없습니다.
+이제 `id`를 Server Action으로 보내서 해당 기록을 업데이트 할 수 있게 만들 겁니다. 하지만 아래와 같이 `id`는 함수 인자로 보낼 수 없습니다.
 
 <div class="code-with-file">
 
@@ -820,7 +820,7 @@ export async function deleteInvoice(id: string) {
 </div>
 
 ## Ref
-- [https://nextjs.org/learn/dashboard-app/mutating-data#4-pass-the-id-to-the-server-action](https://nextjs.org/learn/dashboard-app/mutating-data#4-pass-the-id-to-the-server-action)
+- [https://nextjs.org/learn/dashboard-app/mutating-data](https://nextjs.org/learn/dashboard-app/mutating-data)
 
 
 <link rel="stylesheet" href="https://eso0117.github.io/web-practice/public/next-js-tutorial/css.css">
