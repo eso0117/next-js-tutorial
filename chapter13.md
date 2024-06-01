@@ -26,8 +26,8 @@
 <div class="is-inactive" data-hide-target="practice-01">
   <div class="code-with-file">
 
-    **/app/lib/actions.ts**
-    ```
+**/app/lib/actions.ts**
+```
 export async function createInvoice(formData: FormData) {
   const { customerId, amount, status } = CreateInvoice.parse({
     customerId: formData.get('customerId'),
@@ -52,9 +52,11 @@ export async function createInvoice(formData: FormData) {
   revalidatePath('/dashboard/invoices');
   redirect('/dashboard/invoices');
 }
-    ```
+```
   </div>
 </div>
+
+<br>
 
 <button class="show-and-hide-btn--hidden show-and-hide-btn btn" data-target="practice-02">
   <span data-btn-content>정답 보이기</span>
@@ -63,8 +65,8 @@ export async function createInvoice(formData: FormData) {
 <div class="is-inactive" data-hide-target="practice-02">
   <div class="code-with-file">
 
-    **/app/lib/actions.ts**
-    ```
+**/app/lib/actions.ts**
+```
 export async function updateInvoice(id: string, formData: FormData) {
   const { customerId, amount, status } = UpdateInvoice.parse({
     customerId: formData.get('customerId'),
@@ -87,9 +89,11 @@ export async function updateInvoice(id: string, formData: FormData) {
   revalidatePath('/dashboard/invoices');
   redirect('/dashboard/invoices');
 }
-    ```
+```
   </div>
 </div>
+
+<br>
 
 <button class="show-and-hide-btn--hidden show-and-hide-btn btn" data-target="practice-03">
   <span data-btn-content>정답 보이기</span>
@@ -98,8 +102,8 @@ export async function updateInvoice(id: string, formData: FormData) {
 <div class="is-inactive" data-hide-target="practice-03">
   <div class="code-with-file">
 
-    **/app/lib/actions.ts**
-    ```
+**/app/lib/actions.ts**
+```
 export async function deleteInvoice(id: string) {
   try {
     await sql`DELETE FROM invoices WHERE id = ${id}`;
@@ -109,13 +113,14 @@ export async function deleteInvoice(id: string) {
     return { message: 'Database Error: Failed to Delete Invoice.' };
   }
 }
-    ```
+```
   </div>
 </div>
 
 try/catch 블록 바깥에서 `redirect`가 어떻게 불리는지 확인해보세요. error를 던지고 나서 리다이렉트가 동작하는걸 피하기 위해 우리는 `redirect`을 `try/catch` **후에** 호출했습니다. `redirect`는 오직 `try`가 성공한 후에 불립니다.
 
-이제 Server Action에서 에러가 날떄 무엇이 일어나는지 확인해봅시다. 우리는 이것을 error를 빨리 던짐으로서 할 수 있습니다. 예를들어 `deleteInvoice` 액션 내 함수 최상단에 에러를 던져봅시다.
+이제 Server Action에서 에러가 발생할 때 무엇이 일어나는지 확인해볼겁니다. 
+`deleteInvoice` 액션 내 함수 최상단에 에러를 던져봅시다.
 
 <div class="code-with-file">
 
