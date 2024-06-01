@@ -14,4 +14,6 @@
 - Server Action - chapter 12
 - revalidatePath - chapter 12
 - [`redirect`](https://nextjs.org/docs/app/api-reference/functions/redirect) - chapter 12
-5. 
+
+- [`error.tsx`](https://nextjs.org/docs/app/api-reference/file-conventions/error) - chatper 13
+- `not-found.tsx` 와 `notFound` - chapter 13
