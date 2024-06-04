@@ -117,6 +117,117 @@ either with meaningful text, or an empty string for decorative images. jsx-a11y/
 
 ### 클라이언트 사이드 유효성 검사
 
+클라이언트 사이드에서 폼(form)의 유효성을 검사 할 다양한 방법이 있습니다.
+가장 간단한 방법은 폼(form) 안에 `<input>`과 `<select>` 요소에 `required` 속성을 추가하여 브라우저에서 제공하는 폼 유효성 검사 방식을 사용하는 것 입니다.
+
+예를들어
+
+<div class="code-with-file">
+
+**/app/ui/invoices/create-form.tsx**
+```
+<input
+  id="amount"
+  name="amount"
+  type="number"
+  placeholder="Enter USD amount"
+  className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
+  required
+/>
+```
+</div>
+
+다시 폼(form) 제출을 해보세요. 만약 빈 값으로 폼(form)을 제출하려 했다면 브라우저창의 경고 메시지를 볼 것입니다.
+
+몇몇 AT들은 브라우저 유효성 검사를 지원 하므로 이런 방식은 일반적으로 괜찮습니다.
+
+클라이언트 사이드 유효성 검사의 대안은 서버 사이드 유효성 검사입니다. 다음 부분부터 어떻게 서버 사이드 유효성 검사를 구현할건지 알아볼 겁니다. 지금은 `required` 속성을 지우세요.
+
+### 서버 사이드 유효성 검사
+
+유효성 검사를 서버에서 함으로서
+- 데이터베이스에 넣기 전에 데이터가 올바른 형태를 갖췄는지 확인할 수 있습니다.
+- 악의적인 유저가 클라이언트 사이드 유효성 검사를 우회하는 것의 위험을 줄일 수 있습니다.
+- 어떤게 `유효한` 데이터인지 확인할 [단일 진실 공급원](https://ko.wikipedia.org/wiki/단일_진실_공급원)을 갖게 됩니다.
+
+`create-form.tsx` 컴퍼넌트 내에, `react-dom`으로부터 `useFormState` 훅을 불러(import)오세요. `useFormState`는 훅이기 때문에, 해당 폼(form)을 `"use client"` 선언을 통해 클라이언트 컴퍼넌트로 바꿔야 합니다.
+
+<div class="code-with-file">
+
+**/app/ui/invoices/create-form.tsx**
+```
+'use client';
+ 
+// ...
+import { useFormState } from 'react-dom';
+```
+</div>
+
+폼(Form) 컴퍼넌트 내에, `useFormState` 훅은:
+- 두개의 인자를 받습니다: `(action, initialState)`
+- 두개의 값을 리턴합니다: `[state, dispatch]` - 폼(form) 상태와, dispatch 함수입니다. ([useReducer](https://react.dev/reference/react/useReducer))와 비슷합니다.
+
+`createInvoice` 액션을 인자로서 `useFormState`에 넣으세요. 그리고 `<form action={}>` 속성 안에 dispatch를 넣어 호출하세요.
+
+<div class="code-with-file">
+
+**/app/ui/invoices/create-form.tsx**
+```
+// ...
+import { useFormState } from 'react-dom';
+ 
+export default function Form({ customers }: { customers: CustomerField[] }) {
+  const [state, dispatch] = useFormState(createInvoice, initialState);
+ 
+  return <form action={dispatch}>...</form>;
+}
+```
+</div>
+
+`초기상태(initialState)`는 우리가 정의하는 무엇이든 될 수 있습니다. 이번 경우에는 `message`와 `errors` 키를 갖고 있는 빈 오브젝트를 생성할 겁니다.
+
+<div class="code-with-file">
+
+**/app/ui/invoices/create-form.tsx**
+```
+// ...
+import { useFormState } from 'react-dom';
+ 
+export default function Form({ customers }: { customers: CustomerField[] }) {
+  const initialState = { message: null, errors: {} };
+  const [state, dispatch] = useFormState(createInvoice, initialState);
+ 
+  return <form action={dispatch}>...</form>;
+}
+```
+</div>
+
+처음에는 좀 혼란스러워 보일 수 있습니다, 그러나 우리가 Server Action을 업데이트 한다면 더 이해가 될 겁니다.
+
+
+`action.ts` 파일 내에, 폼(form) 유효성 검사를 위해 Zod를 사용할 수 있습니다. `FormSchema`를 다음과 같이 업데이트 하세요.
+
+<div class="code-with-file">
+
+**/app/lib/action.ts**
+```
+const FormSchema = z.object({
+  id: z.string(),
+  customerId: z.string({
+    invalid_type_error: 'Please select a customer.',
+  }),
+  amount: z.coerce
+    .number()
+    .gt(0, { message: 'Please enter an amount greater than $0.' }),
+  status: z.enum(['pending', 'paid'], {
+    invalid_type_error: 'Please select an invoice status.',
+  }),
+  date: z.string(),
+});
+```
+</div>
+
+- 
 
 
 
