@@ -95,7 +95,7 @@ npm run lint
 45:25  Warning: Image elements must have an alt prop,
 either with meaningful text, or an empty string for decorative images. jsx-a11y/alt-text
 ```
-<div>
+</div>
 
 `next lint`는 빌드 과정의 일부에도 포함되어 동작하기 때문에, 만약 Vercel에 어플리케이션을 배포하려했다면, 빌드 로그에 이 경고가 나타났을겁니다. 그래서 접근성 이슈를 위해 `lint`를 로컬에서 돌려 배포하기 전에 알아낼 수 있습니다.
 
@@ -227,208 +227,76 @@ const FormSchema = z.object({
 ```
 </div>
 
-- 
+- `customerId` - `string`값이 오길 예상하는 고객 ID 필드가 비어있다면 Zod는 에러를 던집니다. 유저에게 고객을 선택하라는 친근한 메시지를 추가합니다.
+- `amount` - 우리가 `amount`를 `string` 에서 `number`로 형 변환 하고 있으므로, 빈 문자열이 온다면 기본적으로 0으로 세팅합니다. Zod에 `.gt()` 함수를 통해 0보다 큰 값이 와야 한다고 선언합니다.
+- `status` - `status`필드가 "pending" 이거나 "paid" 상태이길 예상하고 있습니다. 따라서 해당 값이 비어있다면 Zod는 에러를 던집니다. 유저에게 상태를 선택하라는 메시지를 추가합니다.
 
+다음으로, `createInvoice` 액션을 두 파라미터를 받도록 업데이트 하세요.
 
-
-
-<button class="show-and-hide-btn--hidden show-and-hide-btn btn" data-target="practice-02">
-  <span data-btn-content>정답 보이기</span>
-</button>
-
-<div class="is-inactive" data-hide-target="practice-02">
-  <div class="code-with-file">
+<div class="code-with-file">
 
 **/app/lib/actions.ts**
 ```
-export async function updateInvoice(id: string, formData: FormData) {
-  const { customerId, amount, status } = UpdateInvoice.parse({
+// This is temporary until @types/react-dom is updated
+export type State = {
+  errors?: {
+    customerId?: string[];
+    amount?: string[];
+    status?: string[];
+  };
+  message?: string | null;
+};
+ 
+export async function createInvoice(prevState: State, formData: FormData) {
+  // ...
+}
+```
+</div>
+
+- `formData` - 전과 같습니다.
+- `prevState` - `useFormState` 훅으로부터 전달되는 state를 갖고 있습니다. 이 예제에서는 액션에서 해당 값을 사용하지 않을겁니다만, 필요한 prop입니다.
+
+그다음, Zod의 `parse()` 함수를 `safeParse()`로 바꿉니다.
+
+<div class="code-with-file">
+
+**/app/lib/actions.ts**
+```
+export async function createInvoice(prevState: State, formData: FormData) {
+  // Validate form fields using Zod
+  const validatedFields = CreateInvoice.safeParse({
     customerId: formData.get('customerId'),
     amount: formData.get('amount'),
     status: formData.get('status'),
   });
  
-  const amountInCents = amount * 100;
- 
-  try {
-    await sql`
-        UPDATE invoices
-        SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
-        WHERE id = ${id}
-      `;
-  } catch (error) {
-    return { message: 'Database Error: Failed to Update Invoice.' };
-  }
- 
-  revalidatePath('/dashboard/invoices');
-  redirect('/dashboard/invoices');
+  // ...
 }
 ```
-  </div>
 </div>
 
-<br>
+`safeParse()`는 `success`나 `error`필드를 담고있는 객체를 반환합니다. 이것은 내부에 `try/catch` 구문을 추가하는 것 없이 유효성 검사를 좀 더 우아하게(gracefully) 다루는데 도움을 줄겁니다.
 
-<button class="show-and-hide-btn--hidden show-and-hide-btn btn" data-target="practice-03">
-  <span data-btn-content>정답 보이기</span>
-</button>
-
-<div class="is-inactive" data-hide-target="practice-03">
-  <div class="code-with-file">
-
-**/app/lib/actions.ts**
-```
-export async function deleteInvoice(id: string) {
-  try {
-    await sql`DELETE FROM invoices WHERE id = ${id}`;
-    revalidatePath('/dashboard/invoices');
-    return { message: 'Deleted Invoice.' };
-  } catch (error) {
-    return { message: 'Database Error: Failed to Delete Invoice.' };
-  }
-}
-```
-  </div>
-</div>
-
-try/catch 블록 바깥에서 `redirect`가 어떻게 불리는지 확인해보세요. error를 던지고 나서 리다이렉트가 동작하는걸 피하기 위해 우리는 `redirect`을 `try/catch` **후에** 호출했습니다. `redirect`는 오직 `try`가 성공한 후에 불립니다.
-
-이제 Server Action에서 에러가 발생할 때 무엇이 일어나는지 확인해볼겁니다. 
-`deleteInvoice` 액션 내 함수 최상단에 에러를 던져봅시다.
+데이터베이스에 정보를 보내기 전에, 조건에 맞게 폼(form) 필드들이 유효성 검사가 잘 이루어졌는지 확인합니다.
 
 <div class="code-with-file">
 
 **/app/lib/actions.ts**
 ```
-export async function deleteInvoice(id: string) {
-  throw new Error('Failed to Delete Invoice');
+export async function createInvoice(prevState: State, formData: FormData) {
+  // Validate form fields using Zod
+  const validatedFields = CreateInvoice.safeParse({
+    customerId: formData.get('customerId'),
+    amount: formData.get('amount'),
+    status: formData.get('status'),
+  });
  
-  // Unreachable code block
-  try {
-    await sql`DELETE FROM invoices WHERE id = ${id}`;
-    revalidatePath('/dashboard/invoices');
-    return { message: 'Deleted Invoice' };
-  } catch (error) {
-    return { message: 'Database Error: Failed to Delete Invoice' };
-  }
-}
-```
-</div>
-
-송장을 지우려고 시도할때, 로컬호스트에서 에러를 볼 수 있습니다.
-
-개발하는 동안 이러한 에러를 보는 것은 잠재적인 문제를 미리 볼 수 있으므로 도움이 됩니다. 하지만 우린 실제 유저에게는 갑작스러운 실패 로그보다는 어플리케이션이 계속 동작하는 모습을 보여주고 싶을겁니다.
-
-여기서 Next.js의 [`error.tsx`](https://nextjs.org/docs/app/api-reference/file-conventions/error)가 필요한 부분입니다.
-
-## `error.tsx`로 에러 다루기
-
-`error.tsx` 파일은 라우트 경로에 UI 바운더리를 정의하기 위해 쓰일 수 있습니다. 이것은 예상하지 못한 에러를 위한 **광범위한 에러 페이지로서(catch-all)** 동작하며 대체 UI를 보여줄 수 있습니다.
-
-`/dashboard/invoice` 폴더 내에, `error.tsx` 란 이름의 새로운 파일을 생성하고 다음의 코드를 붙여넣으세요.
-
-<div class="code-with-file">
-
-**/dashboard/invoices/error.tsx**
-```
-'use client';
- 
-import { useEffect } from 'react';
- 
-export default function Error({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  useEffect(() => {
-    // Optionally log the error to an error reporting service
-    console.error(error);
-  }, [error]);
- 
-  return (
-    <main className="flex h-full flex-col items-center justify-center">
-      <h2 className="text-center">Something went wrong!</h2>
-      <button
-        className="mt-4 rounded-md bg-blue-500 px-4 py-2 text-sm text-white transition-colors hover:bg-blue-400"
-        onClick={
-          // Attempt to recover by trying to re-render the invoices route
-          () => reset()
-        }
-      >
-        Try again
-      </button>
-    </main>
-  );
-}
-```
-</div>
-
-위의 코드에서 주목할게 몇가지 있습니다.
-`
-- **"use client"** - `error.tsx`는 클라이언트 컴퍼넌트 입니다.
-- 2가지 props를 받습니다
-  - `error`: 자바스크립트의 네이비트 [`Error`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error) 오브젝트 입니다.
-  - `reset`: 이 함수는 에러 바운더리를 리셋하는데 쓰입니다. 실행이되면, 함수는 해당 결로를 다시 렌더링 합니다.
-
-송장을 지우려고 다시 시도해보면, 다음과 같은 UI를 볼 수 있습니다.
-
-<img src="https://nextjs.org/_next/image?url=%2Flearn%2Flight%2Ferror-page.png&w=1920&q=75" alt="Next.js error.tsx 송장 지우기">
-
-## `notFound` 함수를 이용한 404 에러 핸들링
-
-에러를 우아하게(gracefully) 다룰 다른 한가지 방법은 `notFound` 함수를 쓰는 겁니다. `error.tsx`가 **모든** 에러를 잡는다면, `notFound`는 존재하지 않는 리소스를 가져오려 할때 사용할 수 있습니다.
-
-예를들어 <http://localhost:3000/dashboard/invoices/2e94d1ed-d220-449f-9f11-f0bbceed9645/edit> 를 방문해보세요.
-
-이것은 가짜 UUID로, 데이터베이스내에 존재하지 않습니다.
-
-`error.tsx`를 볼 겁니다. 왜냐하면 `error.tsx`가 정의된 `/invoices`의 하위 경로이기 때문이죠.
-
-만약 더 구체적인 오류 표시가 되길 원한다면, 404 에러를 보여줘서 유저에게 지금 접근하려는 경로가 존재하지 않는다고 알려줄 수 있습니다.
-
-`data.ts`파일 내에 `fetchInvoiceById` 함수로 가서 데이터가 존재하지 않는지 확인할 수 있고 `invoice`를 리턴하는 로그도 추가할 수 있습니다.
-
-<div class="code-with-file">
-
-**/app/lib/data.ts**
-```
-export async function fetchInvoiceById(id: string) {
-  noStore();
-  try {
-    // ...
- 
-    console.log(invoice); // Invoice is an empty array []
-    return invoice[0];
-  } catch (error) {
-    console.error('Database Error:', error);
-    throw new Error('Failed to fetch invoice.');
-  }
-}
-```
-</div>
-
-이제 데이터베이스 내에 송장이 존재하지 않는걸 알았으니, `notFound`를 사용해서 에러를 처리합시다. `/dashboard/invoices/[id]/edit/page.tsx`로 이동해서, `'next/navigation'`에서 `notFound`를 불러(import)오세요.
-
-<div class="code-with-file">
-
-**/dashboard/invoices/[id]/edit/page.tsx**
-
-```
-import { fetchInvoiceById, fetchCustomers } from '@/app/lib/data';
-import { updateInvoice } from '@/app/lib/actions';
-import { notFound } from 'next/navigation';
- 
-export default async function Page({ params }: { params: { id: string } }) {
-  const id = params.id;
-  const [invoice, customers] = await Promise.all([
-    fetchInvoiceById(id),
-    fetchCustomers(),
-  ]);
- 
-  if (!invoice) {
-    notFound();
+  // If form validation fails, return errors early. Otherwise, continue.
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Create Invoice.',
+    };
   }
  
   // ...
@@ -436,102 +304,224 @@ export default async function Page({ params }: { params: { id: string } }) {
 ```
 </div>
 
-완벽합니다! 이제 송장을 찾을 수 없다면 `<Page>` 는 에러를 던질 겁니다. 유저에게 에러 UI를 보여주기 위해 `not-found.tsx` 파일을 `/edit`폴더 내에 생성합시다.
+만약 `validateFields`가 성공적이지 않다면, Zod 오류메시지와 함께 함수를 초기에 반환합니다.
 
-<img src="https://nextjs.org/_next/image?url=%2Flearn%2Flight%2Fnot-found-file.png&w=3840&q=75" alt="not-found.tsx 파일 경로">
+<div class="hint">
 
-그리고나서, `not-found.tsx` 파일 내에, 다음의 코드를 붙여넣으세요.
+**Tip:** validateFields를 console.log로 출력하게 만든다음, 빈 폼을 보내 어떠한 형태인지 확인해보세요.
+</div>
+
+마침내, 폼(form) 유효성 검사를 try/catch 구문 밖에서 별개로 하고 있습니다. 어떠한 데이터베이스 에러를 다루기 위한 특정한 에러 메시지도 반환할 수 있습니다. 최종 코드는 다음과 같을겁니다.
 
 <div class="code-with-file">
 
-**/dashboard/invoices/[id]/edit/not-found.tsx**
+**/app/lib/actions.ts**
 ```
-import Link from 'next/link';
-import { FaceFrownIcon } from '@heroicons/react/24/outline';
+export async function createInvoice(prevState: State, formData: FormData) {
+  // Validate form using Zod
+  const validatedFields = CreateInvoice.safeParse({
+    customerId: formData.get('customerId'),
+    amount: formData.get('amount'),
+    status: formData.get('status'),
+  });
  
-export default function NotFound() {
-  return (
-    <main className="flex h-full flex-col items-center justify-center gap-2">
-      <FaceFrownIcon className="w-10 text-gray-400" />
-      <h2 className="text-xl font-semibold">404 Not Found</h2>
-      <p>Could not find the requested invoice.</p>
-      <Link
-        href="/dashboard/invoices"
-        className="mt-4 rounded-md bg-blue-500 px-4 py-2 text-sm text-white transition-colors hover:bg-blue-400"
-      >
-        Go Back
-      </Link>
-    </main>
-  );
+  // If form validation fails, return errors early. Otherwise, continue.
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Create Invoice.',
+    };
+  }
+ 
+  // Prepare data for insertion into the database
+  const { customerId, amount, status } = validatedFields.data;
+  const amountInCents = amount * 100;
+  const date = new Date().toISOString().split('T')[0];
+ 
+  // Insert data into the database
+  try {
+    await sql`
+      INSERT INTO invoices (customer_id, amount, status, date)
+      VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
+    `;
+  } catch (error) {
+    // If a database error occurs, return a more specific error.
+    return {
+      message: 'Database Error: Failed to Create Invoice.',
+    };
+  }
+ 
+  // Revalidate the cache for the invoices page and redirect the user.
+  revalidatePath('/dashboard/invoices');
+  redirect('/dashboard/invoices');
 }
 ```
 </div>
 
-이제 해당 페이지를 새로고침하세요. 다음과 같은 UI를 볼 수 있습니다.
+훌륭합니다, 이제 우리 폼(form) 컴퍼넌트에서 에러를 보여줘 봅시다. `create-form.tsx` 컴퍼넌트로 돌아가 폼의 `state`를 사용해 에러를 만들어 봅시다.
 
-<img src="https://nextjs.org/_next/image?url=%2Flearn%2Flight%2F404-not-found-page.png&w=1920&q=75" alt="404 Not Found UI">
+각 에러를 위한 **조건 연산자(tenary operator)**를 추가하세요. 예를들어 고객 필드 다음에 다음과 같이 추가할 수 있습니다.
 
-`notFound`는 `error.tsx`보다 우선 적용 된다는걸 명심하세요 그래서 더 구체적인 오류를 처리하고 싶을때 이것에 접근할 수 있습니다.
+<div class="code-with-file">
 
-<div class="quiz">
-  <div class="quiz__icon">
-    <svg fill="none" height="32" viewBox="0 0 32 32" width="32" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#clip0_132_19094)"><path clip-rule="evenodd" d="M16 30.5C24.0081 30.5 30.5 24.0081 30.5 16C30.5 7.99187 24.0081 1.5 16 1.5C7.99187 1.5 1.5 7.99187 1.5 16C1.5 24.0081 7.99187 30.5 16 30.5ZM16 32C24.8366 32 32 24.8366 32 16C32 7.16344 24.8366 0 16 0C7.16344 0 0 7.16344 0 16C0 24.8366 7.16344 32 16 32ZM17.5 22C17.5 22.8284 16.8284 23.5 16 23.5C15.1716 23.5 14.5 22.8284 14.5 22C14.5 21.1716 15.1716 20.5 16 20.5C16.8284 20.5 17.5 21.1716 17.5 22ZM13.5142 11.3218C13.9564 10.391 14.9041 9.75 16 9.75C17.5188 9.75 18.75 10.9812 18.75 12.5C18.75 13.8852 17.7252 15.0323 16.3926 15.2223C15.8162 15.3045 15.25 15.787 15.25 16.5V17.25V18H16.75V17.25V16.6839C18.7397 16.3292 20.25 14.5916 20.25 12.5C20.25 10.1528 18.3472 8.25 16 8.25C14.3035 8.25 12.8406 9.24406 12.1593 10.6782L11.8375 11.3556L13.1924 11.9993L13.5142 11.3218Z" fill="currentColor" fill-rule="evenodd"></path></g><defs><clipPath id="clip0_132_19094"><rect fill="currentColor" height="32" width="32"></rect></clipPath></defs></svg>
+**/app/ui/invoices/create-form.tsx**
+```
+<form action={dispatch}>
+  <div className="rounded-md bg-gray-50 p-4 md:p-6">
+    {/* Customer Name */}
+    <div className="mb-4">
+      <label htmlFor="customer" className="mb-2 block text-sm font-medium">
+        Choose customer
+      </label>
+      <div className="relative">
+        <select
+          id="customer"
+          name="customerId"
+          className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
+          defaultValue=""
+          aria-describedby="customer-error"
+        >
+          <option value="" disabled>
+            Select a customer
+          </option>
+          {customers.map((name) => (
+            <option key={name.id} value={name.id}>
+              {name.name}
+            </option>
+          ))}
+        </select>
+        <UserCircleIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500" />
+      </div>
+      <div id="customer-error" aria-live="polite" aria-atomic="true">
+        {state.errors?.customerId &&
+          state.errors.customerId.map((error: string) => (
+            <p className="mt-2 text-sm text-red-500" key={error}>
+              {error}
+            </p>
+          ))}
+      </div>
+    </div>
+    // ...
   </div>
-  <p class="quiz__title">퀴즈할 시간입니다!</p>
-  <p class="quiz__desc">익힌걸 테스트해보고 무엇을 배웠는지 봅시다.</p>
-  <div class="quiz__box">
-    <p class="quiz__question">라우트 경로에서 예상치 못한 에러를 전반적으로 다루는 Next.js의 파일은 무엇일까요?</p>
-    <div class="option-list">
-      <div class="option" data-question-number="01">
-        <span class="option__number">A</span>
-        <span class="option__desc">404.tsx</span>
-      </div>
-      <div class="option" data-question-number="01">
-        <span class="option__number">B</span>
-        <span class="option__desc">not-found.tsx</span>
-      </div>
-      <div class="option" data-question-number="01" data-answer="true">
-        <span class="option__number">C</span>
-        <span class="option__desc">error.tsx</span>
-      </div>
-      <div class="option" data-question-number="01">
-        <span class="option__number">D</span>
-        <span class="option__desc">catch-all.tsx</span>
-      </div>
-    </div>
-    <div class="quiz__btn-container">
-      <button class="quiz__btn"
-        data-js-check-answer data-question="01">
-        정답 확인
-      </button>
-    </div>
-  </div>  
+</form>
+```
 </div>
 
-## 읽을거리
+<div class="hint">
 
-Next.js의 에러 핸들링에 대해 더 배우고싶다면, 다음의 문서들을 확인하세요.
+**Tip:**
+console.log로 컴퍼넌트 내에 `state`를 출력하고, 모든게 잘 연결 되었는지 확인하세요. 우리의 폼(form)이 클라이언트 컴퍼넌트이므로 브라우저의 개발 툴에서 로그를 확인하세요.
+</div>
 
-- [Error Handling](https://nextjs.org/docs/app/building-your-application/routing/error-handling)
-- [error.js API Reference](https://nextjs.org/docs/app/api-reference/file-conventions/error)
-- [notFound() API Reference](https://nextjs.org/docs/app/api-reference/functions/not-found)
-- [not-found.js API Reference](https://nextjs.org/docs/app/api-reference/file-conventions/not-found)
+위의 코드에서, 우리는 다음과 같은 aria 레이블을 추가하고 있습니다.
+
+- `aria-describedby="customer-error"`: 이것은 `select`요소와 에러 메시지 컨테이너 간의 관계를 설정합니다. 이것은 `id="customer-error"`를 가진 컨테이너가 `select`요소를 설명한다고 가르킵니다. 스크린리더는 유저가 `select` 박스와 상호작용할때 그들에게 에러를 알리기 위해 이 설명을 읽을겁니다.
+- `id="customer-error"`: `id` 요소는 `select` input에 에러 메시지를 갖고 있는 HTML 엘리먼트를 고유하게 구분합니다. 이것은 관계를 구축하기 위해 `aria-describedby`에 필수적입니다.
+- `aria-live="polite"`: `div`내에 에러가 업데이트 되었을때 스크린 리더가 정중하게 유저에게 알려야 합니다. 컨텐츠가 바뀌었을때(예를들어, 유저가 에러를 고쳤을 경우), 스크린리더는 유저를 방해하지 않기 위해 유저가 액션을 하지 않는 상태일때에만 이러한 변화를 알립니다.
+
+## 실습해보기: aria 라벨들 추가하기
+위의 예제를 참고하여, 남은 폼(form) 필드들에 에러를 추가하세요. 어떤 필드라도 값이 안 채워져 있으면, 폼(form)의 하단에 메시지를 보여야 합니다. UI는 다음과 같습니다
+
+<img src="https://nextjs.org/_next/image?url=%2Flearn%2Flight%2Fform-validation-page.png&w=1920&q=75" alt="챕터14 실습해보기">
+
+준비가 되면, `npm run lint`를 실행해서 aria 라벨들을 바르게 사용하는지 확인하세요.
+
+만약 더 도전적인걸 원한다면, 이번 챕터에서 배운걸 활용하여 `edit-form.tsx` 컴퍼넌트에 폼(form) 유효성 검사를 추가하세요
+
+다음의 과정이 필요합니다.
+- `useFormState`를 `edit-form.tsx` 컴퍼넌트에 추가하세요. 
+- Zod의 유효성 검사를 다루기 위해 `updateInvoice` 액션을 수정하세요
+- 컴퍼넌트 내에 에러를 보여주세요. 그리고 접근성 향상을 위해 aria 라벨들을 추가하세요.
+
+준비가 되면, 아래 버튼을 눌러 해답을 확인하세요.
+
+<button class="show-and-hide-btn--hidden show-and-hide-btn btn" data-target="practice-01">
+  <span data-btn-content>정답 보이기</span>
+</button>
+
+<div class="is-inactive" data-hide-target="practice-01">
+
+#### Edit Invoice Form:
+  <div class="code-with-file">
+
+**/app/ui/invoices/edit-form.tsx**
+```
+export default function EditInvoiceForm({
+  invoice,
+  customers,
+}: {
+  invoice: InvoiceForm;
+  customers: CustomerField[];
+}) {
+  const initialState = { message: null, errors: {} };
+  const updateInvoiceWithId = updateInvoice.bind(null, invoice.id);
+  const [state, dispatch] = useFormState(updateInvoiceWithId, initialState);
+ 
+  return <form action={dispatch}>...</form>;
+}
+```
+  </div>
+
+
+#### Server Action:
+  <div class="code-with-file">
+
+**/app/lib/actions.ts**
+```
+export async function updateInvoice(
+  id: string,
+  prevState: State,
+  formData: FormData,
+) {
+  const validatedFields = UpdateInvoice.safeParse({
+    customerId: formData.get('customerId'),
+    amount: formData.get('amount'),
+    status: formData.get('status'),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Update Invoice.',
+    };
+  }
+
+  const { customerId, amount, status } = validatedFields.data;
+  const amountInCents = amount * 100;
+
+  try {
+    await sql`
+      UPDATE invoices
+      SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    return { message: 'Database Error: Failed to Update Invoice.' };
+  }
+
+  revalidatePath('/dashboard/invoices');
+  redirect('/dashboard/invoices');
+}
+```
+  </div>
+</div>
+
 
 <div class="finish">
-  <p class="finish__title">챕터 13을 완료했습니다.</p>
-  <p>이제 어플리케이션에서 우아하게 에러를 다룰 수 있습니다.</p>
+  <p class="finish__title">챕터 14를 완료했습니다.</p>
+  <p>리액트 폼(form) Status와 서버사이드 유효성 검사를 통해 접근성을 향상시키는 방법을 배웠습니다.</p>
   <div class="next-box">
     <p class="next">다음</p>    
-    <p class="next__title">14. 접근성 향상</p>
-    <p>유저 경험을 향상시킬 방법을 알아봅시다. 서버 사이드 폼(form) 유효성 검사와 접근성 향상을 배울겁니다.</p>
-    <a id="next__btn" href="https://nextjs.org/learn/dashboard-app/improving-accessibility">챕터 14 시작하기
+    <p class="next__title">15. 인증 추가하기</p>
+    <p>우리 어플리케이션은 거의 다 되었습니다. 다음 챕터에서 NextAuth.js를 이용한 인증을 추가하는 방법을 배울겁니다.</p>
+    <a id="next__btn" href="https://nextjs.org/learn/dashboard-app/adding-authentication">챕터 15 시작하기
     <svg data-testid="geist-icon" height="16" stroke-linejoin="round" viewBox="0 0 16 16" width="16" style="color: currentcolor;"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.53033 2.21968L9 1.68935L7.93934 2.75001L8.46967 3.28034L12.4393 7.25001H1.75H1V8.75001H1.75H12.4393L8.46967 12.7197L7.93934 13.25L9 14.3107L9.53033 13.7803L14.6036 8.70711C14.9941 8.31659 14.9941 7.68342 14.6036 7.2929L9.53033 2.21968Z" fill="currentColor"></path></svg>
     </a>
   </div>
 </div>
 
 ## Ref
-- <https://nextjs.org/learn/dashboard-app/error-handling>
+- <https://nextjs.org/learn/dashboard-app/improving-accessibility>
 
 
 <link rel="stylesheet" href="https://eso0117.github.io/web-practice/public/next-js-tutorial/css.css">
