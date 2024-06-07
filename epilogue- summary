@@ -18,3 +18,7 @@
 - [`error.tsx`](https://nextjs.org/docs/app/api-reference/file-conventions/error) - chatper 13
 - `not-found.tsx` 와 `notFound` - chapter 13
 - `useFormState` - chapter14
+- aria-* - chapter14
+- authentication - chapter15
+- authorization - chapter15
+- NextAuth.js - chapter15
