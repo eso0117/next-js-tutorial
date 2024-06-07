@@ -514,7 +514,7 @@ export async function updateInvoice(
     <p class="next">다음</p>    
     <p class="next__title">15. 인증 추가하기</p>
     <p>우리 어플리케이션은 거의 다 되었습니다. 다음 챕터에서 NextAuth.js를 이용한 인증을 추가하는 방법을 배울겁니다.</p>
-    <a id="next__btn" href="https://nextjs.org/learn/dashboard-app/adding-authentication">챕터 15 시작하기
+    <a id="next__btn" href="https://thewys.tistory.com/entry/NextJS-튜토리얼-챕터-15-인증-추가하기">챕터 15 시작하기
     <svg data-testid="geist-icon" height="16" stroke-linejoin="round" viewBox="0 0 16 16" width="16" style="color: currentcolor;"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.53033 2.21968L9 1.68935L7.93934 2.75001L8.46967 3.28034L12.4393 7.25001H1.75H1V8.75001H1.75H12.4393L8.46967 12.7197L7.93934 13.25L9 14.3107L9.53033 13.7803L14.6036 8.70711C14.9941 8.31659 14.9941 7.68342 14.6036 7.2929L9.53033 2.21968Z" fill="currentColor"></path></svg>
     </a>
   </div>
