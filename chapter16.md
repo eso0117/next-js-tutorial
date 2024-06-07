@@ -61,7 +61,7 @@
 Next.js는 어플리케이션의 메타데이터를 정의하는데 사용되는 메타데이터 API를 갖고 있습니다.
 어플리케이션에 메타데이터를 추가하는데는 2가지 방법이 있습니다.
 
-- **설정 기반**: [정적 `메타데이터` 객체](https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadata-object)를 내보내거나(export) `layout.js`나 `page.js`파일 내에 동적 [`generateMetadat` 함수](https://nextjs.org/docs/app/api-reference/functions/generate-metadata#generatemetadata-function) 를 추가합니다.
+- **설정 기반**: [정적 `메타데이터` 객체](https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadata-object)를 내보내거나(export) `layout.js`나 `page.js`파일 내에 동적 [`generateMetadata` 함수](https://nextjs.org/docs/app/api-reference/functions/generate-metadata#generatemetadata-function) 를 추가합니다.
 
 - **파일 기반**: Next.js는 메타데이터를 목적으로 사용되는 다양한 특별한 파일들이 있습니다.
   - `favicon.ico`, `apple-icon.jpg`, `icon.jpg`: 아이콘과 파비콘에 활용됩니다.
