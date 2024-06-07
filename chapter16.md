@@ -187,7 +187,7 @@ Next.js 메타데이터 API는 어플리케이션 메타데이터의 모든 제�
     <p class="next">다음</p>    
     <p class="next__title">17. 다음 과정</p>
     <p>Next.js에 대해 계속 알아보세요.</p>
-    <a id="next__btn" href="https://nextjs.org/learn/dashboard-app/next-steps">챕터 17 시작하기
+    <a id="next__btn" href="https://thewys.tistory.com/entry/NextJS-튜토리얼-챕터-17-다음-과정">챕터 17 시작하기
     <svg data-testid="geist-icon" height="16" stroke-linejoin="round" viewBox="0 0 16 16" width="16" style="color: currentcolor;"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.53033 2.21968L9 1.68935L7.93934 2.75001L8.46967 3.28034L12.4393 7.25001H1.75H1V8.75001H1.75H12.4393L8.46967 12.7197L7.93934 13.25L9 14.3107L9.53033 13.7803L14.6036 8.70711C14.9941 8.31659 14.9941 7.68342 14.6036 7.2929L9.53033 2.21968Z" fill="currentColor"></path></svg>
     </a>
   </div>
