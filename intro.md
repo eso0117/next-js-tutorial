@@ -2,7 +2,7 @@
 이 글은 [Next.js 튜토리얼 - Next.js 배우기](https://nextjs.org/learn/dashboard-app)를 번역한 글입니다.
 
 # Next.js 배우기
-Next.js App Router 튜토리얼에 오신것을 환영합니다! 이 자유롭게 상호작용하는 강의에서, 풀스택 웹 어플리케이션을 만들면서 Next.js의 핵심 기능들을 배울겁니다.
+Next.js App Router 튜토리얼에 오신것을 환영합니다! 이 강의에서, 풀스택 웹 어플리케이션을 만들며 Next.js의 핵심 기능들을 배울겁니다.
 
 ## 우리가 만들것
 <img src="https://nextjs.org/_next/image?url=%2Flearn%2Flight%2Fdashboard.png&w=3840&q=75" alt="Nextjs 튜토리얼 결과물">
@@ -11,24 +11,24 @@ Next.js App Router 튜토리얼에 오신것을 환영합니다! 이 자유롭�
 
 - 홈페이지
 - 로그인 페이지
-- 인증에 따라 보호되는 대시보드
+- 인증(Login)에 따라 보호되는 대시보드
 - 유저를 위한 송장(invoice)을 추가하고 편집하고 삭제하는 기능
 
-대시보드는 데이터베이스 또한 가질 것이며, [추후 챕터](https://nextjs.org/learn/dashboard-app/setting-up-your-database)에서 셋업을 진행합니다.
+이 강의는 데이터베이스 또한 세팅할 것이며, [추후 챕터](https://thewys.tistory.com/entry/NextJS-튜토리얼-챕터-6-데이터-베이스-세팅하기)에서 셋업을 진행합니다.
 
 이 튜토리얼의 끝에서 풀스택 Next.js 어플리케이션을 개발할 핵심 기능을 배울겁니다.
 
 ## 개요
-- 스타일하기: Next.js내에 앱을 스타일 할 수 있는 다양한 방법
-- 최적화: 이미지, 링크, 폰트 등의 최적화하는 방법
-- 라우팅: 파일 시스템 라우팅을 이용하여 중첩된 레이아웃과 페이지를 만드는 방법.
-- 데이터 패치: Vercel을 통한 데이터베이스 셋업과, 데이터를 가져오고 스트리밍 할 최고의 방법.
-- 검색과 페이지네이션: URL 파라미터를 이용한 검색과 페이지네이션 방법
-- 데이터 변경(mutating): React Server Action을 통해 데이터를 변경하는 방법과 Next.js 캐시를 재검증하는 방법
-- Error Handling: 일반적인(general) 에러, 404 not found 에러를 처리하는 방법
-- 폼(Form) 유효성 검사와 접근성: 서버사이드 폼 유효성 검사와 접근성 향상을 위한 팁들
-- 인증: [NextAuth.js](https://next-auth.js.org/)와 미들웨어를 통해 앱에 인증기능을 추가하는 방법
-- 메타데이터: 메타데이터를 추가하고, 앱을 소셜미디어에 공유하는 방법
+- **스타일링하기**: Next.js내에 앱을 스타일 할 수 있는 다양한 방법
+- **최적화**: 이미지, 링크, 폰트 등의 최적화하는 방법
+- **라우팅**: 파일 시스템 라우팅을 이용하여 중첩된 레이아웃과 페이지를 만드는 방법.
+- **데이터 가져오기**: Vercel을 통한 데이터베이스 셋업과, 데이터를 가져오고 스트리밍 할 최고의 방법.
+- **검색과 페이지네이션**: URL 파라미터를 이용한 검색과 페이지네이션 방법
+- **데이터 변경(mutating)**: React Server Action을 통해 데이터를 변경하는 방법과 Next.js 캐시를 리벨리데이션 하는 방법
+- **Error Handling**: 일반적인(general) 에러, 404 not found 에러를 처리하는 방법
+- **폼(Form) 유효성 검사와 접근성**: 서버사이드 폼 유효성 검사와 접근성 향상을 위한 팁들
+- **인증(Authentication)**: [NextAuth.js](https://next-auth.js.org/)와 미들웨어를 통해 앱에 로그인 로그아웃 기능을 추가하는 방법
+- **메타데이터**: 메타데이터를 추가하고, 앱을 소셜미디어에 공유하는 방법
 
 ## 선행 지식
 이 튜토리얼은 당신이 리액트와 자바스크립트에 대한 기본적 지식이 있다고 가정합니다. 만약 리액트가 처음이라면, [리액트 기초](https://nextjs.org/learn/react-foundations)코스를 통해 먼저 컴퍼넌트, props, state, hook, 그리고 더 새로운 Server Component들과 Suspense 같은 리액트 기본을 배우길 추천합니다.
@@ -40,8 +40,18 @@ Next.js App Router 튜토리얼에 오신것을 환영합니다! 이 자유롭�
 
 추가로, [깃헙 계정](https://github.com/join/)과 [Vercel 계정](https://vercel.com/signup)이 필요합니다.
 
+<div class="hint">
+
+**번역자말**: 깃헙계정과 Vercel 계정은 챕터 6부터 필요합니다. 나중에 만드셔도 되요 :)
+</div>
+
 ## 함께 대화해요
 만약 이 튜토리얼에서 질문이 있거나 피드백을 제공하고싶다면, [디스코드](https://discord.com/invite/Q3AsD4efFC)나 [깃헙](https://github.com/vercel/next-learn) 같은 우리의 커뮤니티에서 질문할 수 있습니다.
+
+<div class="hint">
+
+**번역자말**: 블로그 댓글로 질문&피드백 남기셔도 확인해보겠습니다!
+</div>
 
 <div class="finish">
   <p class="finish__title">시작할 준비 되었나요?</p>
