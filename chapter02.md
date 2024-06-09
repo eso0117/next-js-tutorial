@@ -16,7 +16,9 @@
 `global.css`는 앱 내에 어디서든 불러(import)들일 수 있습니다, 그러나 보통 최상위 컴퍼넌트에 추가하는게 좋은 관행입니다. 이것이 [최상위 레이아웃](https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts#root-layout-required) 입니다.(나중에 다룰거에요)
 
 `/app/layout.tsx`로 이동해서 `global.css` 파일을 불러(import)들여서 전역스타일을 어플리케이션에 추가하세요:
+<div class="code-with-file">
 
+**/app/layout.tsx**
 ```
 import '@/app/ui/global.css';
  
@@ -32,6 +34,7 @@ export default function RootLayout({
   );
 }
 ```
+</div>
 
 개발서버가 여전히 동작하는 동안, 변경사항을 저장하면 브라우저에서 미리보기를 할 수 있습니다. 홈페이지는 아래와 같은 형태를 가질겁니다.
 
@@ -41,11 +44,15 @@ export default function RootLayout({
 
 `global.css`을 본다면, @tailwind라는 명령문을 볼 수 있습니다:
 
+<div class="code-with-file">
+
+**/app/ui/global.css**
 ```
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 ```
+</div>
 
 ## Tailwind
 [Tailwind](https://tailwindcss.com/)는 [유틸리티 클래스](https://tailwindcss.com/docs/utility-first)들을 바로 TSX 마크업에 빠르게 쓰면서 개발 프로세스 속도를 향상 시킬 수 있는 CSS프레임 워크 입니다.
@@ -62,6 +69,10 @@ Tailwind에서는, 클래스명을 추가해서 요소들을 꾸밀 수 있습�
 
 `/app/page.tsx`를 본다면, 이 예제에서 우리가 Tailwind 클래스들을 사용하는걸 볼 수 있습니다.
 
+<div class="code-with-file">
+
+
+**/app/page.tsx**
 ```
 import AcmeLogo from '@/app/ui/acme-logo';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
@@ -76,16 +87,22 @@ export default function Page() {
   )
 }
 ```
+</div>
 
 만약 이번이 Tailwind를 처음 사용하는 것이어도 걱정하지마세요. 시간을 아끼기 위해 우린 이미 모든 당신이 사용할 컴퍼넌트를 스타일 해놨습니다.
 
 Tailwind를 가지고 놀아봅시다! 아래 코드를 복사하고 `/app/page.tsx` 내에 `<p>`태그 위에 넣어봅시다.
 
+
+<div class="code-with-file">
+
+**/app/page.tsx**
 ```
 <div
   className="h-0 w-0 border-b-[30px] border-l-[20px] border-r-[20px] border-b-black border-l-transparent border-r-transparent"
 />
 ```
+</div>
 
 <div class="quiz">
   <div class="quiz__icon">
@@ -129,8 +146,12 @@ Tailwind를 가지고 놀아봅시다! 아래 코드를 복사하고 `/app/page.
 
 이 강의에서 Tailwind를 계속 쓸 것입니다만 어떻게 CSS모듈을 이용해서 퀴즈의 같은 결과를 얻을 수 있는지 잠깐 봅시다.
 
-/app/ui 내부에, `home.module.css` 파일을 새로 생성하고, 다음의 CSS를 추가합시다.
+`/app/ui` 내부에, `home.module.css` 파일을 새로 생성하고, 다음의 CSS를 추가합시다.
 
+
+<div class="code-with-file">
+
+**/app/ui/home.module.css**
 ```
 .shape {
   height: 0;
@@ -140,12 +161,29 @@ Tailwind를 가지고 놀아봅시다! 아래 코드를 복사하고 `/app/page.
   border-right: 20px solid transparent;
 }
 ```
+</div>
 
-그다음 `/app/page.tsx` 파일에서 해당 스타일을 불러오고(import) `<div>`의 클래스를 방금 추가한 `styles.shape`로 바꿉시다:
+그 다음 `/app/page.tsx` 파일에서 해당 스타일을 불러오고(import) `<div>`의 클래스를 방금 추가한 `styles.shape`로 바꿉시다:
+
+<div class="code-with-file">
+
+**/app/page.tsx**
 ```
+import AcmeLogo from '@/app/ui/acme-logo';
+import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import Link from 'next/link';
 import styles from '@/app/ui/home.module.css';
-<div className={styles.shape} />;
+ 
+export default function Page() {
+  return (
+    <main className="flex min-h-screen flex-col p-6">
+      <div className={styles.shape} />
+    // ...
+  )
+}
 ```
+</div>
+
 변경사항을 저장하고, 브라우저에서 봅시다. 전과 같은 모양을 볼 수 있을 겁니다.
 Tailwind와 CSS Modules은 Next.js 어플리케이션을 스타일하는 가장 많이 쓰는 방법들입니다. 둘 중 하나를 사용하는건 선호의 문제입니다 - 같은 어플리케이션에서 두가지 모두를 사용할 수도 있습니다.
 
@@ -189,6 +227,10 @@ Tailwind와 CSS Modules은 Next.js 어플리케이션을 스타일하는 가장 
 - 만약 `paid`라면, 색을 초록색으로 하고 싶습니다. `pending`이라면 회색으로 하고 싶습니다.
 아래와 같이, `clsx`를 사용하여 클래스를 조건부로 받을 수 있습니다.
 
+
+<div class="code-with-file">
+
+**/app/ui/invoices/status.tsx**
 ```
 import clsx from 'clsx';
  
@@ -206,6 +248,7 @@ export default function InvoiceStatus({ status }: { status: string }) {
     // ...
 )}
 ```
+</div>
 
 <div class="quiz">
   <div class="quiz__icon">
