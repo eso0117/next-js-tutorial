@@ -1,3 +1,4 @@
+- 기본셋업 - intro
 - npx create-next-app - chapter 1
 - npm i - chapter 1
 - npm run dev - chapter 1
@@ -6,7 +7,14 @@
 - tailwind - chapter 2
 - clsx - chapter 2
 - next/font - chapter 3
-- Image, next/image - chapter 3
+- next/image - chapter 3
+- page.tsx - chapter 4
+- layout.tsx - chapter 4
+- 중첩라우팅 - chapter 4
+- 중첩레이아웃 - chapter 4
+- next/link <Link /> - chapter 5
+- URL 경로 확인 usePathname() - chapter5
+- 
 
 
 
